@@ -1,38 +1,45 @@
 import { motion } from 'framer-motion';
 import { Level, LEVEL_INFO } from '@/data/wordDatabase';
-import { BookOpen, Zap } from 'lucide-react';
-
+import { Zap } from 'lucide-react';
 interface LevelSelectProps {
   onSelectLevel: (level: Level) => void;
 }
-
 const levels: Level[] = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
-
 const container = {
-  hidden: { opacity: 0 },
+  hidden: {
+    opacity: 0
+  },
   show: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.1,
-    },
-  },
+      staggerChildren: 0.1
+    }
+  }
 };
-
 const item = {
-  hidden: { opacity: 0, y: 20 },
-  show: { opacity: 1, y: 0 },
+  hidden: {
+    opacity: 0,
+    y: 20
+  },
+  show: {
+    opacity: 1,
+    y: 0
+  }
 };
-
-export const LevelSelect = ({ onSelectLevel }: LevelSelectProps) => {
-  return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-gradient-to-b from-background via-background to-secondary/20">
+export const LevelSelect = ({
+  onSelectLevel
+}: LevelSelectProps) => {
+  return <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-gradient-to-b from-background via-background to-secondary/20">
       {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="text-center mb-12"
-      >
+      <motion.div initial={{
+      opacity: 0,
+      y: -20
+    }} animate={{
+      opacity: 1,
+      y: 0
+    }} transition={{
+      duration: 0.6
+    }} className="text-center mb-12">
         <h1 className="text-5xl md:text-7xl font-bold mb-4 bg-gradient-to-r from-primary via-primary to-accent bg-clip-text text-transparent">
           ArtikelDrop
         </h1>
@@ -44,23 +51,14 @@ export const LevelSelect = ({ onSelectLevel }: LevelSelectProps) => {
       </motion.div>
 
       {/* Level Grid */}
-      <motion.div
-        variants={container}
-        initial="hidden"
-        animate="show"
-        className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 max-w-3xl w-full"
-      >
-        {levels.map((level) => {
-          const info = LEVEL_INFO[level];
-          return (
-            <motion.button
-              key={level}
-              variants={item}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => onSelectLevel(level)}
-              className="level-card group text-left"
-            >
+      <motion.div variants={container} initial="hidden" animate="show" className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 max-w-3xl w-full">
+        {levels.map(level => {
+        const info = LEVEL_INFO[level];
+        return <motion.button key={level} variants={item} whileHover={{
+          scale: 1.05
+        }} whileTap={{
+          scale: 0.98
+        }} onClick={() => onSelectLevel(level)} className="level-card group text-left">
               <div className={`absolute inset-0 bg-gradient-to-br ${info.color} opacity-0 group-hover:opacity-20 transition-opacity duration-300 rounded-2xl`} />
               
               <div className="relative z-10">
@@ -68,7 +66,7 @@ export const LevelSelect = ({ onSelectLevel }: LevelSelectProps) => {
                   <span className={`text-3xl md:text-4xl font-bold bg-gradient-to-r ${info.color} bg-clip-text text-transparent`}>
                     {info.name}
                   </span>
-                  <BookOpen className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                  
                 </div>
                 
                 <p className="text-sm text-muted-foreground mb-3">
@@ -80,20 +78,19 @@ export const LevelSelect = ({ onSelectLevel }: LevelSelectProps) => {
                   <span>Speed: {info.speed.toFixed(1)}x</span>
                 </div>
               </div>
-            </motion.button>
-          );
-        })}
+            </motion.button>;
+      })}
       </motion.div>
 
       {/* Footer hint */}
-      <motion.p
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.8 }}
-        className="mt-12 text-sm text-muted-foreground"
-      >
+      <motion.p initial={{
+      opacity: 0
+    }} animate={{
+      opacity: 1
+    }} transition={{
+      delay: 0.8
+    }} className="mt-12 text-sm text-muted-foreground">
         Select a level to begin
       </motion.p>
-    </div>
-  );
+    </div>;
 };
