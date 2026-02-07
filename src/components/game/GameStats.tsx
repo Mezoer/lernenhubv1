@@ -1,6 +1,7 @@
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Trophy, Heart, Target, ArrowLeft } from 'lucide-react';
 import { Level } from '@/data/wordDatabase';
+import { useEffect, useRef } from 'react';
 
 interface GameStatsProps {
   level: Level;
@@ -11,6 +12,13 @@ interface GameStatsProps {
 }
 
 export const GameStats = ({ level, score, lives, streak, onBack }: GameStatsProps) => {
+  const prevLives = useRef(lives);
+  const justLostLife = prevLives.current > lives;
+  
+  useEffect(() => {
+    prevLives.current = lives;
+  }, [lives]);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: -20 }}
@@ -46,34 +54,58 @@ export const GameStats = ({ level, score, lives, streak, onBack }: GameStatsProp
         </motion.div>
 
         {/* Streak */}
-        {streak > 1 && (
-          <motion.div
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="stat-badge flex items-center gap-2 bg-primary/20"
-          >
-            <Target className="w-4 h-4 text-primary" />
-            <span className="font-bold text-primary">{streak}x</span>
-          </motion.div>
-        )}
-
-        {/* Lives */}
-        <div className="flex items-center gap-1">
-          {[...Array(3)].map((_, i) => (
+        <AnimatePresence>
+          {streak > 1 && (
             <motion.div
-              key={i}
-              initial={false}
-              animate={{
-                scale: i < lives ? 1 : 0.8,
-                opacity: i < lives ? 1 : 0.3,
-              }}
-              transition={{ type: 'spring', stiffness: 500, damping: 25 }}
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0, opacity: 0 }}
+              className="stat-badge flex items-center gap-2 bg-primary/20"
             >
-              <Heart
-                className={`w-6 h-6 ${i < lives ? 'text-destructive fill-destructive' : 'text-muted-foreground'}`}
-              />
+              <Target className="w-4 h-4 text-primary" />
+              <span className="font-bold text-primary">{streak}x</span>
             </motion.div>
-          ))}
+          )}
+        </AnimatePresence>
+
+        {/* Lives with satisfying heart animations */}
+        <div className="flex items-center gap-1">
+          {[...Array(3)].map((_, i) => {
+            const isActive = i < lives;
+            const isBreaking = justLostLife && i === lives;
+            
+            return (
+              <motion.div
+                key={i}
+                initial={false}
+                animate={
+                  isBreaking
+                    ? {
+                        scale: [1, 1.4, 0],
+                        rotate: [0, -15, 15, 0],
+                        opacity: [1, 1, 0],
+                      }
+                    : {
+                        scale: isActive ? 1 : 0.7,
+                        opacity: isActive ? 1 : 0.2,
+                      }
+                }
+                transition={
+                  isBreaking
+                    ? { duration: 0.4, ease: 'easeOut' }
+                    : { type: 'spring', stiffness: 500, damping: 25 }
+                }
+              >
+                <Heart
+                  className={`w-6 h-6 transition-colors ${
+                    isActive 
+                      ? 'text-destructive fill-destructive drop-shadow-[0_0_8px_hsl(var(--destructive)/0.6)]' 
+                      : 'text-muted-foreground/40'
+                  }`}
+                />
+              </motion.div>
+            );
+          })}
         </div>
       </div>
     </motion.div>

@@ -1,6 +1,6 @@
 import { useRef, useEffect, useCallback } from 'react';
-import { motion, useMotionValue, useTransform, PanInfo } from 'framer-motion';
-import { Word, Artikel } from '@/data/wordDatabase';
+import { motion, useMotionValue, useTransform } from 'framer-motion';
+import { Word } from '@/data/wordDatabase';
 
 interface DraggableWordProps {
   word: Word;
@@ -9,7 +9,7 @@ interface DraggableWordProps {
   fallSpeed: number;
   isDragging: boolean;
   onDragStart: () => void;
-  onDragEnd: (info: PanInfo) => void;
+  onDragEnd: (wordRect: DOMRect) => void;
   onHitFloor: () => void;
   gameHeight: number;
 }
@@ -26,14 +26,15 @@ export const DraggableWord = ({
   gameHeight,
 }: DraggableWordProps) => {
   const y = useMotionValue(0);
+  const wordRef = useRef<HTMLDivElement>(null);
   const animationRef = useRef<number | null>(null);
   const lastTimeRef = useRef<number>(performance.now());
   
   // Floor detection threshold (leave space for article zones)
   const floorY = gameHeight - 200;
 
-  // Glow effect based on position
-  const glowOpacity = useTransform(y, [0, floorY / 2, floorY], [0.3, 0.5, 0.8]);
+  // Glow effect based on position - pulsing golden glow
+  const glowIntensity = useTransform(y, [0, floorY / 2, floorY], [0.4, 0.6, 0.9]);
 
   // Gravity animation loop
   const animate = useCallback((currentTime: number) => {
@@ -70,19 +71,31 @@ export const DraggableWord = ({
     };
   }, [animate]);
 
+  const handleDragEnd = useCallback(() => {
+    if (wordRef.current) {
+      const rect = wordRef.current.getBoundingClientRect();
+      onDragEnd(rect);
+    }
+  }, [onDragEnd]);
+
   return (
     <motion.div
+      ref={wordRef}
       key={wordKey}
       drag
       dragConstraints={containerRef}
       dragElastic={0}
       dragMomentum={false}
       onDragStart={onDragStart}
-      onDragEnd={(_, info) => onDragEnd(info)}
+      onDragEnd={handleDragEnd}
       style={{ y }}
-      initial={{ opacity: 0, scale: 0.8 }}
+      initial={{ opacity: 0, scale: 0.8, y: -20 }}
       animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.5 }}
+      exit={{ 
+        opacity: 0, 
+        scale: 1.3,
+        transition: { duration: 0.3, ease: 'easeOut' }
+      }}
       transition={{
         type: 'spring',
         stiffness: 300,
@@ -95,26 +108,42 @@ export const DraggableWord = ({
       className="absolute left-1/2 -translate-x-1/2 top-8"
     >
       <motion.div
-        className="word-card relative"
+        className="word-card relative overflow-hidden"
         style={{
           boxShadow: useTransform(
-            glowOpacity,
-            (opacity) => `0 0 ${20 + opacity * 30}px hsl(var(--primary) / ${opacity})`
+            glowIntensity,
+            (intensity) => `
+              0 0 ${15 + intensity * 25}px hsl(var(--primary) / ${intensity * 0.6}),
+              0 ${4 + intensity * 8}px ${20 + intensity * 20}px hsl(220 25% 5% / 0.5)
+            `
           ),
         }}
       >
-        <span className="text-2xl md:text-3xl font-bold text-foreground">
+        {/* Pulsing background glow */}
+        <motion.div
+          className="absolute inset-0 rounded-xl bg-gradient-to-b from-primary/20 to-transparent"
+          animate={{
+            opacity: [0.3, 0.6, 0.3],
+          }}
+          transition={{
+            duration: 1.5,
+            repeat: Infinity,
+            ease: 'easeInOut',
+          }}
+        />
+        
+        <span className="relative z-10 text-2xl md:text-3xl font-bold text-foreground">
           {word.word}
         </span>
         
         {/* Subtle shimmer effect */}
         <motion.div
-          className="absolute inset-0 rounded-xl bg-gradient-to-r from-transparent via-primary/10 to-transparent"
+          className="absolute inset-0 rounded-xl bg-gradient-to-r from-transparent via-white/10 to-transparent"
           animate={{
-            x: ['-100%', '100%'],
+            x: ['-200%', '200%'],
           }}
           transition={{
-            duration: 2,
+            duration: 2.5,
             repeat: Infinity,
             ease: 'linear',
           }}

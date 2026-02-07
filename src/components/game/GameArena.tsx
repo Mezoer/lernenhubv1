@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { AnimatePresence, PanInfo } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { v4 as uuidv4 } from 'uuid';
 import { Level, Artikel, Word, getRandomWord, LEVEL_INFO } from '@/data/wordDatabase';
 import { DraggableWord } from './DraggableWord';
@@ -22,9 +22,10 @@ interface GameState {
   isDragging: boolean;
   activeZone: Artikel | null;
   zoneResult: { zone: Artikel; correct: boolean } | null;
+  showScreenFlash: 'correct' | 'incorrect' | null;
 }
 
-const ARTICLES: Artikel[] = ['der', 'die', 'das'];
+const ARTICLES: Artikel[] = ['der', 'das', 'die']; // das in middle as neutral
 
 export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -46,6 +47,7 @@ export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
     isDragging: false,
     activeZone: null,
     zoneResult: null,
+    showScreenFlash: null,
   }));
 
   const fallSpeed = LEVEL_INFO[level].speed;
@@ -126,9 +128,15 @@ export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
         streak: 0,
         currentWord: null,
         zoneResult: { zone: artikel, correct: false },
+        showScreenFlash: 'incorrect',
         isGameOver: newLives <= 0,
       };
     });
+
+    // Clear flash effect
+    setTimeout(() => {
+      setGameState((prev) => ({ ...prev, showScreenFlash: null }));
+    }, 400);
 
     // Spawn new word if not game over
     setTimeout(() => {
@@ -143,7 +151,7 @@ export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
         }
         return prev;
       });
-    }, 500);
+    }, 600);
   }, [level]);
 
   // Handle floor hit (word missed)
@@ -157,9 +165,15 @@ export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
         lives: newLives,
         streak: 0,
         currentWord: null,
+        showScreenFlash: 'incorrect',
         isGameOver: newLives <= 0,
       };
     });
+
+    // Clear flash effect
+    setTimeout(() => {
+      setGameState((prev) => ({ ...prev, showScreenFlash: null }));
+    }, 400);
 
     setTimeout(() => {
       setGameState((prev) => {
@@ -172,7 +186,7 @@ export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
         }
         return prev;
       });
-    }, 300);
+    }, 400);
   }, [gameState.isDragging, level]);
 
   // Drag handlers
@@ -181,28 +195,25 @@ export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
     setGameState((prev) => ({ ...prev, isDragging: true }));
   }, [updateZonePositions]);
 
-  const handleDragEnd = useCallback((info: PanInfo) => {
+  const handleDragEnd = useCallback((wordRect: DOMRect) => {
     if (!gameState.currentWord) return;
 
-    const wordElement = document.querySelector('[data-draggable-word]');
-    if (!wordElement) {
-      setGameState((prev) => ({ ...prev, isDragging: false }));
-      return;
-    }
-
-    const wordRect = wordElement.getBoundingClientRect();
     const wordCenterX = wordRect.left + wordRect.width / 2;
-    const wordCenterY = wordRect.top + wordRect.height / 2;
+    const wordBottom = wordRect.top + wordRect.height;
+
+    // Refresh zone positions for accurate detection
+    updateZonePositions();
 
     // Check which zone the word was dropped in
     let droppedInZone: Artikel | null = null;
     
     zonesRef.current.forEach((rect, artikel) => {
+      // Check if word overlaps with zone (more forgiving collision)
       if (
         wordCenterX >= rect.left &&
         wordCenterX <= rect.right &&
-        wordCenterY >= rect.top &&
-        wordCenterY <= rect.bottom
+        wordBottom >= rect.top &&
+        wordRect.top <= rect.bottom
       ) {
         droppedInZone = artikel;
       }
@@ -219,7 +230,7 @@ export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
       // Dropped outside zones, resume falling
       setGameState((prev) => ({ ...prev, isDragging: false }));
     }
-  }, [gameState.currentWord, handleCorrect, handleIncorrect]);
+  }, [gameState.currentWord, handleCorrect, handleIncorrect, updateZonePositions]);
 
   // Restart game
   const handleRestart = useCallback(() => {
@@ -233,11 +244,25 @@ export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
       isDragging: false,
       activeZone: null,
       zoneResult: null,
+      showScreenFlash: null,
     });
   }, [level]);
 
   return (
-    <div className="h-screen flex flex-col bg-[image:var(--gradient-game-bg)]">
+    <div className="h-screen flex flex-col bg-[image:var(--gradient-game-bg)] relative">
+      {/* Screen flash effect for incorrect answers */}
+      <AnimatePresence>
+        {gameState.showScreenFlash === 'incorrect' && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            className="absolute inset-0 z-50 pointer-events-none bg-destructive/20"
+          />
+        )}
+      </AnimatePresence>
+
       <GameStats
         level={level}
         score={gameState.score}
@@ -254,20 +279,18 @@ export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
         {/* Falling Word */}
         <AnimatePresence mode="wait">
           {gameState.currentWord && !gameState.isGameOver && (
-            <div data-draggable-word>
-              <DraggableWord
-                key={gameState.wordKey}
-                word={gameState.currentWord}
-                wordKey={gameState.wordKey}
-                containerRef={containerRef}
-                fallSpeed={fallSpeed}
-                isDragging={gameState.isDragging}
-                onDragStart={handleDragStart}
-                onDragEnd={handleDragEnd}
-                onHitFloor={handleHitFloor}
-                gameHeight={containerHeight}
-              />
-            </div>
+            <DraggableWord
+              key={gameState.wordKey}
+              word={gameState.currentWord}
+              wordKey={gameState.wordKey}
+              containerRef={containerRef}
+              fallSpeed={fallSpeed}
+              isDragging={gameState.isDragging}
+              onDragStart={handleDragStart}
+              onDragEnd={handleDragEnd}
+              onHitFloor={handleHitFloor}
+              gameHeight={containerHeight}
+            />
           )}
         </AnimatePresence>
 

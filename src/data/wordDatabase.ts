@@ -165,7 +165,7 @@ export const WORD_DATABASE: Record<Level, Word[]> = {
     { word: 'Sachverhalt', artikel: 'der', level: 'C1' },
     { word: 'Stellenwert', artikel: 'der', level: 'C1' },
     { word: 'Paradigmenwechsel', artikel: 'der', level: 'C1' },
-    { word: 'Trugschluss', artikel: 'die', level: 'C1' },
+    { word: 'Trugschluss', artikel: 'der', level: 'C1' },
     { word: 'Hypothese', artikel: 'die', level: 'C1' },
     { word: 'Analyse', artikel: 'die', level: 'C1' },
     { word: 'Synthese', artikel: 'die', level: 'C1' },
