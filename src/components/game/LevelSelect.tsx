@@ -90,7 +90,11 @@ export const LevelSelect = ({
     }} transition={{
       delay: 0.8
     }} className="mt-12 text-sm text-muted-foreground">
-        Select a level to begin
+        
+        
+        Vocabulary gets harder with each level       
+             
+             
       </motion.p>
     </div>;
 };
