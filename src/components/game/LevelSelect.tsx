@@ -45,8 +45,8 @@ export const LevelSelect = ({
         </h1>
         <p className="text-lg md:text-xl text-muted-foreground max-w-md mx-auto">
           Master German articles by dragging words to <span className="text-der font-semibold">der</span>,{' '}
-          <span className="text-die font-semibold">die</span>, or{' '}
-          <span className="text-das font-semibold">das</span>
+          <span className="font-semibold text-[#22c365]">das</span>, or{' '}
+          <span className="font-semibold text-[#f0427c]">die</span>
         </p>
       </motion.div>
 
