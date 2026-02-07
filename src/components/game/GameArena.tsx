@@ -1,0 +1,312 @@
+import { useState, useRef, useCallback, useEffect } from 'react';
+import { AnimatePresence, PanInfo } from 'framer-motion';
+import { v4 as uuidv4 } from 'uuid';
+import { Level, Artikel, Word, getRandomWord, LEVEL_INFO } from '@/data/wordDatabase';
+import { DraggableWord } from './DraggableWord';
+import { ArticleZone } from './ArticleZone';
+import { GameStats } from './GameStats';
+import { GameOver } from './GameOver';
+
+interface GameArenaProps {
+  level: Level;
+  onBackToMenu: () => void;
+}
+
+interface GameState {
+  currentWord: Word | null;
+  wordKey: string;
+  score: number;
+  lives: number;
+  streak: number;
+  isGameOver: boolean;
+  isDragging: boolean;
+  activeZone: Artikel | null;
+  zoneResult: { zone: Artikel; correct: boolean } | null;
+}
+
+const ARTICLES: Artikel[] = ['der', 'die', 'das'];
+
+export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const zonesRef = useRef<Map<Artikel, DOMRect>>(new Map());
+  const [containerHeight, setContainerHeight] = useState(600);
+  
+  const [highScore, setHighScore] = useState(() => {
+    const saved = localStorage.getItem(`artikeldrop-highscore-${level}`);
+    return saved ? parseInt(saved, 10) : 0;
+  });
+
+  const [gameState, setGameState] = useState<GameState>(() => ({
+    currentWord: getRandomWord(level),
+    wordKey: uuidv4(),
+    score: 0,
+    lives: 3,
+    streak: 0,
+    isGameOver: false,
+    isDragging: false,
+    activeZone: null,
+    zoneResult: null,
+  }));
+
+  const fallSpeed = LEVEL_INFO[level].speed;
+
+  // Update container height on mount and resize
+  useEffect(() => {
+    const updateHeight = () => {
+      if (containerRef.current) {
+        setContainerHeight(containerRef.current.clientHeight);
+      }
+    };
+    updateHeight();
+    window.addEventListener('resize', updateHeight);
+    return () => window.removeEventListener('resize', updateHeight);
+  }, []);
+
+  // Update zone positions
+  const updateZonePositions = useCallback(() => {
+    ARTICLES.forEach((artikel) => {
+      const element = document.getElementById(`zone-${artikel}`);
+      if (element) {
+        zonesRef.current.set(artikel, element.getBoundingClientRect());
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    updateZonePositions();
+    window.addEventListener('resize', updateZonePositions);
+    return () => window.removeEventListener('resize', updateZonePositions);
+  }, [updateZonePositions]);
+
+  // Spawn new word with fresh key (fixes teleport bug)
+  const spawnNewWord = useCallback(() => {
+    setGameState((prev) => ({
+      ...prev,
+      currentWord: getRandomWord(level),
+      wordKey: uuidv4(), // New key forces complete remount
+      isDragging: false,
+      activeZone: null,
+      zoneResult: null,
+    }));
+  }, [level]);
+
+  // Handle correct answer
+  const handleCorrect = useCallback((artikel: Artikel) => {
+    setGameState((prev) => {
+      const newScore = prev.score + 10 * (prev.streak + 1);
+      const newStreak = prev.streak + 1;
+      
+      // Save high score
+      if (newScore > highScore) {
+        localStorage.setItem(`artikeldrop-highscore-${level}`, newScore.toString());
+        setHighScore(newScore);
+      }
+
+      return {
+        ...prev,
+        score: newScore,
+        streak: newStreak,
+        currentWord: null,
+        zoneResult: { zone: artikel, correct: true },
+      };
+    });
+
+    // Spawn new word after animation
+    setTimeout(spawnNewWord, 500);
+  }, [highScore, level, spawnNewWord]);
+
+  // Handle incorrect answer
+  const handleIncorrect = useCallback((artikel: Artikel) => {
+    setGameState((prev) => {
+      const newLives = prev.lives - 1;
+      
+      return {
+        ...prev,
+        lives: newLives,
+        streak: 0,
+        currentWord: null,
+        zoneResult: { zone: artikel, correct: false },
+        isGameOver: newLives <= 0,
+      };
+    });
+
+    // Spawn new word if not game over
+    setTimeout(() => {
+      setGameState((prev) => {
+        if (!prev.isGameOver) {
+          return {
+            ...prev,
+            currentWord: getRandomWord(level),
+            wordKey: uuidv4(),
+            zoneResult: null,
+          };
+        }
+        return prev;
+      });
+    }, 500);
+  }, [level]);
+
+  // Handle floor hit (word missed)
+  const handleHitFloor = useCallback(() => {
+    if (gameState.isDragging) return;
+    
+    setGameState((prev) => {
+      const newLives = prev.lives - 1;
+      return {
+        ...prev,
+        lives: newLives,
+        streak: 0,
+        currentWord: null,
+        isGameOver: newLives <= 0,
+      };
+    });
+
+    setTimeout(() => {
+      setGameState((prev) => {
+        if (!prev.isGameOver) {
+          return {
+            ...prev,
+            currentWord: getRandomWord(level),
+            wordKey: uuidv4(),
+          };
+        }
+        return prev;
+      });
+    }, 300);
+  }, [gameState.isDragging, level]);
+
+  // Drag handlers
+  const handleDragStart = useCallback(() => {
+    updateZonePositions();
+    setGameState((prev) => ({ ...prev, isDragging: true }));
+  }, [updateZonePositions]);
+
+  const handleDragEnd = useCallback((info: PanInfo) => {
+    if (!gameState.currentWord) return;
+
+    const wordElement = document.querySelector('[data-draggable-word]');
+    if (!wordElement) {
+      setGameState((prev) => ({ ...prev, isDragging: false }));
+      return;
+    }
+
+    const wordRect = wordElement.getBoundingClientRect();
+    const wordCenterX = wordRect.left + wordRect.width / 2;
+    const wordCenterY = wordRect.top + wordRect.height / 2;
+
+    // Check which zone the word was dropped in
+    let droppedInZone: Artikel | null = null;
+    
+    zonesRef.current.forEach((rect, artikel) => {
+      if (
+        wordCenterX >= rect.left &&
+        wordCenterX <= rect.right &&
+        wordCenterY >= rect.top &&
+        wordCenterY <= rect.bottom
+      ) {
+        droppedInZone = artikel;
+      }
+    });
+
+    if (droppedInZone) {
+      const isCorrect = droppedInZone === gameState.currentWord.artikel;
+      if (isCorrect) {
+        handleCorrect(droppedInZone);
+      } else {
+        handleIncorrect(droppedInZone);
+      }
+    } else {
+      // Dropped outside zones, resume falling
+      setGameState((prev) => ({ ...prev, isDragging: false }));
+    }
+  }, [gameState.currentWord, handleCorrect, handleIncorrect]);
+
+  // Restart game
+  const handleRestart = useCallback(() => {
+    setGameState({
+      currentWord: getRandomWord(level),
+      wordKey: uuidv4(),
+      score: 0,
+      lives: 3,
+      streak: 0,
+      isGameOver: false,
+      isDragging: false,
+      activeZone: null,
+      zoneResult: null,
+    });
+  }, [level]);
+
+  return (
+    <div className="h-screen flex flex-col bg-[image:var(--gradient-game-bg)]">
+      <GameStats
+        level={level}
+        score={gameState.score}
+        lives={gameState.lives}
+        streak={gameState.streak}
+        onBack={onBackToMenu}
+      />
+
+      {/* Game Area */}
+      <div
+        ref={containerRef}
+        className="flex-1 relative overflow-hidden"
+      >
+        {/* Falling Word */}
+        <AnimatePresence mode="wait">
+          {gameState.currentWord && !gameState.isGameOver && (
+            <div data-draggable-word>
+              <DraggableWord
+                key={gameState.wordKey}
+                word={gameState.currentWord}
+                wordKey={gameState.wordKey}
+                containerRef={containerRef}
+                fallSpeed={fallSpeed}
+                isDragging={gameState.isDragging}
+                onDragStart={handleDragStart}
+                onDragEnd={handleDragEnd}
+                onHitFloor={handleHitFloor}
+                gameHeight={containerHeight}
+              />
+            </div>
+          )}
+        </AnimatePresence>
+
+        {/* Article Zones */}
+        <div className="absolute bottom-0 left-0 right-0 p-4 md:p-6">
+          <div className="flex gap-3 md:gap-4 max-w-4xl mx-auto">
+            {ARTICLES.map((artikel) => (
+              <div
+                key={artikel}
+                id={`zone-${artikel}`}
+                className="flex-1"
+              >
+                <ArticleZone
+                  artikel={artikel}
+                  isActive={gameState.activeZone === artikel}
+                  isCorrect={
+                    gameState.zoneResult?.zone === artikel
+                      ? gameState.zoneResult.correct
+                      : null
+                  }
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Game Over Overlay */}
+      <AnimatePresence>
+        {gameState.isGameOver && (
+          <GameOver
+            score={gameState.score}
+            level={level}
+            highScore={highScore}
+            onRestart={handleRestart}
+            onBackToMenu={onBackToMenu}
+          />
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
