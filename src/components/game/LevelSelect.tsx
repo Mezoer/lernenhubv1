@@ -92,7 +92,7 @@ export const LevelSelect = ({
     }} className="mt-12 text-sm text-muted-foreground">
         
         
-        Vocabulary gets harder with each level       
+        Vocabulary gets harder with each level!       
              
              
       </motion.p>
