@@ -9,7 +9,7 @@ interface DraggableWordProps {
   fallSpeed: number;
   isDragging: boolean;
   onDragStart: () => void;
-  onDragEnd: (wordRect: DOMRect) => void;
+  onDragEnd: (wordRect: DOMRect, wordSnapshot: Word) => void;
   onHitFloor: () => void;
   gameHeight: number;
 }
@@ -74,9 +74,10 @@ export const DraggableWord = ({
   const handleDragEnd = useCallback(() => {
     if (wordRef.current) {
       const rect = wordRef.current.getBoundingClientRect();
-      onDragEnd(rect);
+      // Pass the word snapshot to prevent race conditions
+      onDragEnd(rect, word);
     }
-  }, [onDragEnd]);
+  }, [onDragEnd, word]);
 
   return (
     <motion.div

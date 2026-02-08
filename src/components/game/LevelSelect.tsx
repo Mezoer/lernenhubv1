@@ -1,10 +1,14 @@
 import { motion } from 'framer-motion';
 import { Level, LEVEL_INFO } from '@/data/wordDatabase';
-import { Zap } from 'lucide-react';
+import { Zap, ArrowLeft } from 'lucide-react';
+
 interface LevelSelectProps {
   onSelectLevel: (level: Level) => void;
+  onBack?: () => void;
 }
+
 const levels: Level[] = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
+
 const container = {
   hidden: {
     opacity: 0
@@ -16,6 +20,7 @@ const container = {
     }
   }
 };
+
 const item = {
   hidden: {
     opacity: 0,
@@ -26,10 +31,24 @@ const item = {
     y: 0
   }
 };
+
 export const LevelSelect = ({
-  onSelectLevel
+  onSelectLevel,
+  onBack
 }: LevelSelectProps) => {
-  return <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-gradient-to-b from-background via-background to-secondary/20">
+  return <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-[image:var(--gradient-game-bg)] relative">
+      {/* Back Button */}
+      {onBack && (
+        <motion.button
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          onClick={onBack}
+          className="absolute top-6 left-6 flex items-center gap-2 px-4 py-2 rounded-xl bg-secondary/50 hover:bg-secondary text-foreground transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span className="text-sm font-medium">Back</span>
+        </motion.button>
+      )}
       {/* Header */}
       <motion.div initial={{
       opacity: 0,
