@@ -25,7 +25,7 @@ interface GameState {
   showScreenFlash: 'correct' | 'incorrect' | null;
 }
 
-const ARTICLES: Artikel[] = ['der', 'das', 'die']; // das in middle as neutral
+const ARTICLES: Artikel[] = ['der', 'das', 'die'] as const; // das in middle as neutral
 
 export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -195,32 +195,33 @@ export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
     setGameState((prev) => ({ ...prev, isDragging: true }));
   }, [updateZonePositions]);
 
-  const handleDragEnd = useCallback((wordRect: DOMRect) => {
-    if (!gameState.currentWord) return;
-
+  const handleDragEnd = useCallback((wordRect: DOMRect, wordSnapshot: Word) => {
+    // Use the snapshot of the word at drag time to prevent race conditions
     const wordCenterX = wordRect.left + wordRect.width / 2;
-    const wordBottom = wordRect.top + wordRect.height;
+    const wordCenterY = wordRect.top + wordRect.height / 2;
 
-    // Refresh zone positions for accurate detection
-    updateZonePositions();
-
-    // Check which zone the word was dropped in
+    // Check which zone the word was dropped in by querying DOM directly
     let droppedInZone: Artikel | null = null;
     
-    zonesRef.current.forEach((rect, artikel) => {
-      // Check if word overlaps with zone (more forgiving collision)
-      if (
-        wordCenterX >= rect.left &&
-        wordCenterX <= rect.right &&
-        wordBottom >= rect.top &&
-        wordRect.top <= rect.bottom
-      ) {
-        droppedInZone = artikel;
+    ARTICLES.forEach((artikel) => {
+      const zoneElement = document.getElementById(`zone-${artikel}`);
+      if (zoneElement) {
+        const rect = zoneElement.getBoundingClientRect();
+        // Check if word center overlaps with zone
+        if (
+          wordCenterX >= rect.left &&
+          wordCenterX <= rect.right &&
+          wordCenterY >= rect.top &&
+          wordCenterY <= rect.bottom
+        ) {
+          droppedInZone = artikel;
+        }
       }
     });
 
     if (droppedInZone) {
-      const isCorrect = droppedInZone === gameState.currentWord.artikel;
+      // Compare against the snapshot, not current state
+      const isCorrect = droppedInZone === wordSnapshot.artikel;
       if (isCorrect) {
         handleCorrect(droppedInZone);
       } else {
@@ -230,7 +231,7 @@ export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
       // Dropped outside zones, resume falling
       setGameState((prev) => ({ ...prev, isDragging: false }));
     }
-  }, [gameState.currentWord, handleCorrect, handleIncorrect, updateZonePositions]);
+  }, [handleCorrect, handleIncorrect]);
 
   // Restart game
   const handleRestart = useCallback(() => {
