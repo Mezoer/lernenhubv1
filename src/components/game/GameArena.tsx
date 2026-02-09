@@ -12,6 +12,11 @@ interface GameArenaProps {
   onBackToMenu: () => void;
 }
 
+interface FailedWord {
+  word: Word;
+  selectedArtikel: string | null;
+}
+
 interface GameState {
   currentWord: Word | null;
   wordKey: string;
@@ -20,9 +25,11 @@ interface GameState {
   streak: number;
   isGameOver: boolean;
   isDragging: boolean;
+  isPaused: boolean;
   activeZone: Artikel | null;
   zoneResult: { zone: Artikel; correct: boolean } | null;
   showScreenFlash: 'correct' | 'incorrect' | null;
+  failedWords: FailedWord[];
 }
 
 const ARTICLES: Artikel[] = ['der', 'das', 'die'] as const; // das in middle as neutral
@@ -45,9 +52,11 @@ export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
     streak: 0,
     isGameOver: false,
     isDragging: false,
+    isPaused: false,
     activeZone: null,
     zoneResult: null,
     showScreenFlash: null,
+    failedWords: [],
   }));
 
   const fallSpeed = LEVEL_INFO[level].speed;
@@ -80,6 +89,11 @@ export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
     return () => window.removeEventListener('resize', updateZonePositions);
   }, [updateZonePositions]);
 
+  // Toggle pause
+  const handleTogglePause = useCallback(() => {
+    setGameState((prev) => ({ ...prev, isPaused: !prev.isPaused }));
+  }, []);
+
   // Spawn new word with fresh key (fixes teleport bug)
   const spawnNewWord = useCallback(() => {
     setGameState((prev) => ({
@@ -110,17 +124,24 @@ export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
         streak: newStreak,
         currentWord: null,
         zoneResult: { zone: artikel, correct: true },
+        showScreenFlash: 'correct',
       };
     });
+
+    // Clear flash effect
+    setTimeout(() => {
+      setGameState((prev) => ({ ...prev, showScreenFlash: null }));
+    }, 300);
 
     // Spawn new word after animation
     setTimeout(spawnNewWord, 500);
   }, [highScore, level, spawnNewWord]);
 
   // Handle incorrect answer
-  const handleIncorrect = useCallback((artikel: Artikel) => {
+  const handleIncorrect = useCallback((artikel: Artikel, wordSnapshot: Word) => {
     setGameState((prev) => {
       const newLives = prev.lives - 1;
+      const newFailedWords = [...prev.failedWords, { word: wordSnapshot, selectedArtikel: artikel }];
       
       return {
         ...prev,
@@ -130,6 +151,7 @@ export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
         zoneResult: { zone: artikel, correct: false },
         showScreenFlash: 'incorrect',
         isGameOver: newLives <= 0,
+        failedWords: newFailedWords,
       };
     });
 
@@ -156,10 +178,14 @@ export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
 
   // Handle floor hit (word missed)
   const handleHitFloor = useCallback(() => {
-    if (gameState.isDragging) return;
+    if (gameState.isDragging || gameState.isPaused) return;
     
     setGameState((prev) => {
+      if (!prev.currentWord) return prev;
+      
       const newLives = prev.lives - 1;
+      const newFailedWords = [...prev.failedWords, { word: prev.currentWord, selectedArtikel: null }];
+      
       return {
         ...prev,
         lives: newLives,
@@ -167,6 +193,7 @@ export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
         currentWord: null,
         showScreenFlash: 'incorrect',
         isGameOver: newLives <= 0,
+        failedWords: newFailedWords,
       };
     });
 
@@ -187,7 +214,7 @@ export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
         return prev;
       });
     }, 400);
-  }, [gameState.isDragging, level]);
+  }, [gameState.isDragging, gameState.isPaused, level]);
 
   // Drag handlers
   const handleDragStart = useCallback(() => {
@@ -225,7 +252,7 @@ export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
       if (isCorrect) {
         handleCorrect(droppedInZone);
       } else {
-        handleIncorrect(droppedInZone);
+        handleIncorrect(droppedInZone, wordSnapshot);
       }
     } else {
       // Dropped outside zones, resume falling
@@ -243,15 +270,17 @@ export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
       streak: 0,
       isGameOver: false,
       isDragging: false,
+      isPaused: false,
       activeZone: null,
       zoneResult: null,
       showScreenFlash: null,
+      failedWords: [],
     });
   }, [level]);
 
   return (
-    <div className="h-screen flex flex-col bg-[image:var(--gradient-game-bg)] relative">
-      {/* Screen flash effect for incorrect answers */}
+    <div className="h-screen flex flex-col bg-[image:var(--gradient-game-bg)] relative select-none">
+      {/* Screen flash effects */}
       <AnimatePresence>
         {gameState.showScreenFlash === 'incorrect' && (
           <motion.div
@@ -262,6 +291,37 @@ export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
             className="absolute inset-0 z-50 pointer-events-none bg-destructive/20"
           />
         )}
+        {gameState.showScreenFlash === 'correct' && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.3 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            className="absolute inset-0 z-50 pointer-events-none bg-success/20"
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Pause Overlay */}
+      <AnimatePresence>
+        {gameState.isPaused && !gameState.isGameOver && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 z-40 flex items-center justify-center bg-background/80 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.8 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.8 }}
+              className="text-center"
+            >
+              <h2 className="text-4xl font-bold text-foreground mb-4 font-['JetBrains_Mono']">Paused</h2>
+              <p className="text-muted-foreground">Press the play button to continue</p>
+            </motion.div>
+          </motion.div>
+        )}
       </AnimatePresence>
 
       <GameStats
@@ -269,7 +329,9 @@ export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
         score={gameState.score}
         lives={gameState.lives}
         streak={gameState.streak}
+        isPaused={gameState.isPaused}
         onBack={onBackToMenu}
+        onTogglePause={handleTogglePause}
       />
 
       {/* Game Area */}
@@ -287,6 +349,7 @@ export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
               containerRef={containerRef}
               fallSpeed={fallSpeed}
               isDragging={gameState.isDragging}
+              isPaused={gameState.isPaused}
               onDragStart={handleDragStart}
               onDragEnd={handleDragEnd}
               onHitFloor={handleHitFloor}
@@ -326,6 +389,7 @@ export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
             score={gameState.score}
             level={level}
             highScore={highScore}
+            failedWords={gameState.failedWords}
             onRestart={handleRestart}
             onBackToMenu={onBackToMenu}
           />

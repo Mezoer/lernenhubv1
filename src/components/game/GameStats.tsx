@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trophy, Heart, Target, ArrowLeft } from 'lucide-react';
+import { Trophy, Heart, Target, ArrowLeft, Pause, Play } from 'lucide-react';
 import { Level } from '@/data/wordDatabase';
 import { useEffect, useRef } from 'react';
 
@@ -8,10 +8,12 @@ interface GameStatsProps {
   score: number;
   lives: number;
   streak: number;
+  isPaused: boolean;
   onBack: () => void;
+  onTogglePause: () => void;
 }
 
-export const GameStats = ({ level, score, lives, streak, onBack }: GameStatsProps) => {
+export const GameStats = ({ level, score, lives, streak, isPaused, onBack, onTogglePause }: GameStatsProps) => {
   const prevLives = useRef(lives);
   const justLostLife = prevLives.current > lives;
   
@@ -23,7 +25,7 @@ export const GameStats = ({ level, score, lives, streak, onBack }: GameStatsProp
     <motion.div
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex items-center justify-between p-4 bg-card/50 backdrop-blur-sm border-b border-border"
+      className="flex items-center justify-between p-4 bg-card/50 backdrop-blur-sm border-b border-border select-none"
     >
       {/* Back button + Level */}
       <div className="flex items-center gap-3">
@@ -67,6 +69,15 @@ export const GameStats = ({ level, score, lives, streak, onBack }: GameStatsProp
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Pause Button */}
+        <button
+          onClick={onTogglePause}
+          className="p-2 rounded-lg hover:bg-secondary transition-colors"
+          aria-label={isPaused ? 'Resume' : 'Pause'}
+        >
+          {isPaused ? <Play className="w-5 h-5" /> : <Pause className="w-5 h-5" />}
+        </button>
 
         {/* Lives with satisfying heart animations */}
         <div className="flex items-center gap-1">
