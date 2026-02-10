@@ -1,21 +1,25 @@
 import { motion } from 'framer-motion';
 import { Layers3, Type } from 'lucide-react';
-
 interface GameHubProps {
   onSelectArtikelDrop: () => void;
   onSelectSatzSplitter: () => void;
 }
-
-export const GameHub = ({ onSelectArtikelDrop, onSelectSatzSplitter }: GameHubProps) => {
-  return (
-    <div className="min-h-screen bg-[image:var(--gradient-game-bg)] flex flex-col items-center justify-center p-6 select-none">
+export const GameHub = ({
+  onSelectArtikelDrop,
+  onSelectSatzSplitter
+}: GameHubProps) => {
+  return <div className="min-h-screen bg-[image:var(--gradient-game-bg)] flex flex-col items-center justify-center p-6 select-none">
       {/* Header with German flag colors */}
-      <motion.div
-        initial={{ opacity: 0, y: -30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: 'easeOut' }}
-        className="text-center mb-12"
-      >
+      <motion.div initial={{
+      opacity: 0,
+      y: -30
+    }} animate={{
+      opacity: 1,
+      y: 0
+    }} transition={{
+      duration: 0.6,
+      ease: 'easeOut'
+    }} className="text-center mb-12">
         <h1 className="text-5xl md:text-7xl font-bold mb-4 font-['JetBrains_Mono']">
           <span className="inline-block text-black drop-shadow-[0_0_15px_rgba(0,0,0,0.8)]">Ler</span>
           <span className="inline-block text-[hsl(45,100%,50%)] drop-shadow-[0_0_15px_rgba(255,200,0,0.6)]">nen</span>
@@ -33,20 +37,25 @@ export const GameHub = ({ onSelectArtikelDrop, onSelectSatzSplitter }: GameHubPr
       {/* Game Cards */}
       <div className="grid md:grid-cols-2 gap-6 md:gap-8 max-w-4xl w-full">
         {/* Artikel-Drop Card */}
-        <motion.button
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-          whileHover={{ scale: 1.03, y: -4 }}
-          whileTap={{ scale: 0.98 }}
-          onClick={onSelectArtikelDrop}
-          className="group relative overflow-hidden rounded-3xl p-8 text-left"
-          style={{
-            background: 'var(--gradient-card)',
-            boxShadow: 'var(--shadow-lg)',
-            transition: 'box-shadow 0.2s ease-in-out',
-          }}
-        >
+        <motion.button initial={{
+        opacity: 0,
+        y: 40
+      }} animate={{
+        opacity: 1,
+        y: 0
+      }} transition={{
+        duration: 0.5,
+        delay: 0.1
+      }} whileHover={{
+        scale: 1.03,
+        y: -4
+      }} whileTap={{
+        scale: 0.98
+      }} onClick={onSelectArtikelDrop} className="group relative overflow-hidden rounded-3xl p-8 text-left" style={{
+        background: 'var(--gradient-card)',
+        boxShadow: 'var(--shadow-lg)',
+        transition: 'box-shadow 0.2s ease-in-out'
+      }}>
           {/* Icon - no LED/glow */}
           <div className="relative z-10 mb-6">
             <div className="w-16 h-16 rounded-2xl flex items-center justify-center bg-gradient-to-br from-[hsl(var(--der-color))] via-[hsl(var(--das-color))] to-[hsl(var(--die-color))]">
@@ -71,20 +80,25 @@ export const GameHub = ({ onSelectArtikelDrop, onSelectSatzSplitter }: GameHubPr
         </motion.button>
 
         {/* Satz-Splitter Card */}
-        <motion.button
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          whileHover={{ scale: 1.03, y: -4 }}
-          whileTap={{ scale: 0.98 }}
-          onClick={onSelectSatzSplitter}
-          className="group relative overflow-hidden rounded-3xl p-8 text-left"
-          style={{
-            background: 'var(--gradient-card)',
-            boxShadow: 'var(--shadow-lg)',
-            transition: 'box-shadow 0.2s ease-in-out',
-          }}
-        >
+        <motion.button initial={{
+        opacity: 0,
+        y: 40
+      }} animate={{
+        opacity: 1,
+        y: 0
+      }} transition={{
+        duration: 0.5,
+        delay: 0.2
+      }} whileHover={{
+        scale: 1.03,
+        y: -4
+      }} whileTap={{
+        scale: 0.98
+      }} onClick={onSelectSatzSplitter} className="group relative overflow-hidden rounded-3xl p-8 text-left" style={{
+        background: 'var(--gradient-card)',
+        boxShadow: 'var(--shadow-lg)',
+        transition: 'box-shadow 0.2s ease-in-out'
+      }}>
           {/* Icon - no LED/glow */}
           <div className="relative z-10 mb-6">
             <div className="w-16 h-16 rounded-2xl flex items-center justify-center bg-gradient-to-br from-accent to-primary">
@@ -100,7 +114,7 @@ export const GameHub = ({ onSelectArtikelDrop, onSelectSatzSplitter }: GameHubPr
               </span>
             </h2>
             <p className="text-muted-foreground text-sm md:text-base leading-relaxed">
-              Rebuild German sentences by dragging words into the correct positions. Master German word order from simple clauses to complex structures!
+              Rebuild German sentences by dragging words into the correct positions. Master German word order!
             </p>
           </div>
 
@@ -110,14 +124,15 @@ export const GameHub = ({ onSelectArtikelDrop, onSelectSatzSplitter }: GameHubPr
       </div>
 
       {/* Footer hint */}
-      <motion.p
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5, delay: 0.5 }}
-        className="mt-12 text-sm text-muted-foreground/60"
-      >
+      <motion.p initial={{
+      opacity: 0
+    }} animate={{
+      opacity: 1
+    }} transition={{
+      duration: 0.5,
+      delay: 0.5
+    }} className="mt-12 text-sm text-muted-foreground/60">
         Select a game to begin
       </motion.p>
-    </div>
-  );
+    </div>;
 };
