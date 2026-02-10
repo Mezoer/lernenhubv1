@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Heart, Flame, Timer } from 'lucide-react';
+import { ArrowLeft, Heart, Flame, Timer, Pause, Play } from 'lucide-react';
 import { Level, LEVEL_INFO } from '@/data/wordDatabase';
+import { useEffect, useRef } from 'react';
 
 interface SatzGameStatsProps {
   level: Level;
@@ -9,7 +10,9 @@ interface SatzGameStatsProps {
   streak: number;
   timeLeft: number;
   maxTime: number;
+  isPaused: boolean;
   onBack: () => void;
+  onTogglePause: () => void;
 }
 
 export const SatzGameStats = ({
@@ -19,14 +22,22 @@ export const SatzGameStats = ({
   streak,
   timeLeft,
   maxTime,
+  isPaused,
   onBack,
+  onTogglePause,
 }: SatzGameStatsProps) => {
   const levelInfo = LEVEL_INFO[level];
   const timePercentage = (timeLeft / maxTime) * 100;
   const isLowTime = timeLeft <= 5;
+  const prevLives = useRef(lives);
+  const justLostLife = prevLives.current > lives;
+
+  useEffect(() => {
+    prevLives.current = lives;
+  }, [lives]);
 
   return (
-    <div className="flex items-center justify-between p-4 md:p-6 bg-card/50 backdrop-blur-sm border-b border-border">
+    <div className="flex items-center justify-between p-4 md:p-6 bg-card/50 backdrop-blur-sm border-b border-border select-none">
       {/* Back Button + Level */}
       <div className="flex items-center gap-3">
         <motion.button
@@ -53,10 +64,7 @@ export const SatzGameStats = ({
               isLowTime ? 'bg-destructive' : 'bg-gradient-to-r from-accent to-primary'
             }`}
             initial={{ width: '100%' }}
-            animate={{ 
-              width: `${timePercentage}%`,
-              backgroundColor: isLowTime ? 'hsl(var(--destructive))' : undefined,
-            }}
+            animate={{ width: `${timePercentage}%` }}
             transition={{ duration: 0.3 }}
           />
           {isLowTime && (
@@ -101,35 +109,46 @@ export const SatzGameStats = ({
           </motion.div>
         )}
 
+        {/* Pause Button */}
+        <button
+          onClick={onTogglePause}
+          className="p-2 rounded-lg hover:bg-secondary transition-colors"
+          aria-label={isPaused ? 'Resume' : 'Pause'}
+        >
+          {isPaused ? <Play className="w-5 h-5" /> : <Pause className="w-5 h-5" />}
+        </button>
+
         {/* Lives */}
         <div className="flex items-center gap-1">
-          <AnimatePresence mode="popLayout">
-            {[...Array(3)].map((_, i) => (
+          {[...Array(3)].map((_, i) => {
+            const isActive = i < lives;
+            const isBreaking = justLostLife && i === lives;
+            
+            return (
               <motion.div
                 key={i}
-                initial={{ scale: 0 }}
-                animate={{ 
-                  scale: i < lives ? 1 : 0.6,
-                  opacity: i < lives ? 1 : 0.3,
-                }}
-                exit={{
-                  scale: [1, 1.4, 0],
-                  opacity: [1, 1, 0],
-                  rotate: [0, -15, 15],
-                  transition: { duration: 0.4 }
-                }}
-                transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                initial={false}
+                animate={
+                  isBreaking
+                    ? { scale: [1, 1.4, 0], rotate: [0, -15, 15, 0], opacity: [1, 1, 0] }
+                    : { scale: isActive ? 1 : 0.7, opacity: isActive ? 1 : 0.2 }
+                }
+                transition={
+                  isBreaking
+                    ? { duration: 0.4, ease: 'easeOut' }
+                    : { type: 'spring', stiffness: 500, damping: 25 }
+                }
               >
                 <Heart
                   className={`w-6 h-6 ${
-                    i < lives
-                      ? 'text-destructive fill-destructive'
+                    isActive
+                      ? 'text-destructive fill-destructive drop-shadow-[0_0_8px_hsl(var(--destructive)/0.6)]'
                       : 'text-muted-foreground/30'
                   }`}
                 />
               </motion.div>
-            ))}
-          </AnimatePresence>
+            );
+          })}
         </div>
       </div>
     </div>

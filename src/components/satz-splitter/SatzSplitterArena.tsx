@@ -29,7 +29,10 @@ interface GameState {
   streak: number;
   timeLeft: number;
   isGameOver: boolean;
+  isPaused: boolean;
   showFeedback: 'correct' | 'incorrect' | null;
+  isFirstRound: boolean;
+  showIntro: boolean;
 }
 
 export const SatzSplitterArena = ({ level, onBackToMenu }: SatzSplitterArenaProps) => {
@@ -52,25 +55,36 @@ export const SatzSplitterArena = ({ level, onBackToMenu }: SatzSplitterArenaProp
       streak: 0,
       timeLeft: levelInfo.timeLimit,
       isGameOver: false,
+      isPaused: false,
       showFeedback: null,
+      isFirstRound: true,
+      showIntro: true,
     };
   }, [level, levelInfo.timeLimit]);
 
   const [gameState, setGameState] = useState<GameState>(initializeGame);
 
-  // Timer countdown
+  // Intro animation - dismiss after 2s, then start timer
   useEffect(() => {
-    if (gameState.isGameOver || gameState.timeLeft <= 0) return;
+    if (gameState.showIntro) {
+      const timeout = setTimeout(() => {
+        setGameState(prev => ({ ...prev, showIntro: false }));
+      }, 2000);
+      return () => clearTimeout(timeout);
+    }
+  }, [gameState.showIntro]);
+
+  // Timer countdown - paused during intro
+  useEffect(() => {
+    if (gameState.isGameOver || gameState.timeLeft <= 0 || gameState.isPaused || gameState.showIntro) return;
 
     const timer = setInterval(() => {
       setGameState(prev => {
         if (prev.timeLeft <= 1) {
-          // Time's up - lose a life
           const newLives = prev.lives - 1;
           if (newLives <= 0) {
             return { ...prev, timeLeft: 0, lives: 0, isGameOver: true };
           }
-          // Get new sentence
           const newSentence = getRandomSentence(level);
           return {
             ...prev,
@@ -89,9 +103,9 @@ export const SatzSplitterArena = ({ level, onBackToMenu }: SatzSplitterArenaProp
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [gameState.isGameOver, gameState.timeLeft, level, levelInfo.timeLimit]);
+  }, [gameState.isGameOver, gameState.timeLeft, gameState.isPaused, gameState.showIntro, level, levelInfo.timeLimit]);
 
-  // Clear feedback after animation
+  // Clear feedback
   useEffect(() => {
     if (gameState.showFeedback) {
       const timeout = setTimeout(() => {
@@ -101,33 +115,44 @@ export const SatzSplitterArena = ({ level, onBackToMenu }: SatzSplitterArenaProp
     }
   }, [gameState.showFeedback]);
 
+  // Toggle pause
+  const handleTogglePause = useCallback(() => {
+    setGameState(prev => ({ ...prev, isPaused: !prev.isPaused }));
+  }, []);
+
   // Handle placing a word in a slot
   const handlePlaceWord = useCallback((word: SentenceWord, slotIndex: number) => {
     setGameState(prev => {
       if (!prev.currentSentence) return prev;
 
-      // Check if correct position
+      // If it's a distractor, always wrong
+      if (word.isDistractor) {
+        return { ...prev, showFeedback: 'incorrect', streak: 0 };
+      }
+
       const isCorrect = word.position === slotIndex + 1;
 
       if (isCorrect) {
-        // Place the word
         const newPlacedWords = [...prev.placedWords];
         newPlacedWords[slotIndex] = word;
 
         // Remove from shuffled words
-        const newShuffledWords = prev.shuffledWords.filter(w => w.word !== word.word || w.position !== word.position);
+        const newShuffledWords = prev.shuffledWords.filter(
+          w => !(w.word === word.word && w.position === word.position)
+        );
 
-        // Check if sentence complete
-        if (newShuffledWords.length === 0) {
+        // Check if all REAL words are placed (ignore remaining distractors)
+        const realWordsRemaining = newShuffledWords.filter(w => !w.isDistractor);
+        
+        if (realWordsRemaining.length === 0) {
           const newScore = prev.score + 50 * (prev.streak + 1);
           
-          // Update high score
           if (newScore > highScore) {
             localStorage.setItem(`satzsplitter-highscore-${level}`, newScore.toString());
             setHighScore(newScore);
           }
 
-          // Get next sentence after delay
+          // Spawn next sentence after delay
           setTimeout(() => {
             setGameState(p => {
               const newSentence = getRandomSentence(level);
@@ -138,6 +163,8 @@ export const SatzSplitterArena = ({ level, onBackToMenu }: SatzSplitterArenaProp
                 placedWords: new Array(newSentence.words.length).fill(null),
                 sentenceKey: uuidv4(),
                 timeLeft: levelInfo.timeLimit,
+                isFirstRound: false,
+                showIntro: false,
               };
             });
           }, 800);
@@ -159,24 +186,18 @@ export const SatzSplitterArena = ({ level, onBackToMenu }: SatzSplitterArenaProp
           showFeedback: 'correct',
         };
       } else {
-        // Wrong position
-        return {
-          ...prev,
-          showFeedback: 'incorrect',
-          streak: 0,
-        };
+        return { ...prev, showFeedback: 'incorrect', streak: 0 };
       }
     });
   }, [highScore, level, levelInfo.timeLimit]);
 
-  // Restart game
   const handleRestart = useCallback(() => {
     setGameState(initializeGame());
   }, [initializeGame]);
 
   return (
-    <div className="h-screen flex flex-col bg-[image:var(--gradient-game-bg)] relative overflow-hidden">
-      {/* Screen flash effect */}
+    <div className="h-screen flex flex-col bg-[image:var(--gradient-game-bg)] relative overflow-hidden select-none">
+      {/* Screen flash */}
       <AnimatePresence>
         {gameState.showFeedback === 'incorrect' && (
           <motion.div
@@ -198,6 +219,65 @@ export const SatzSplitterArena = ({ level, onBackToMenu }: SatzSplitterArenaProp
         )}
       </AnimatePresence>
 
+      {/* Pause Overlay */}
+      <AnimatePresence>
+        {gameState.isPaused && !gameState.isGameOver && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 z-40 flex items-center justify-center bg-background/80 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.8 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.8 }}
+              className="text-center"
+            >
+              <h2 className="text-4xl font-bold text-foreground mb-4 font-['JetBrains_Mono']">Paused</h2>
+              <p className="text-muted-foreground">Press the play button to continue</p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Intro animation overlay */}
+      <AnimatePresence>
+        {gameState.showIntro && gameState.currentSentence && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.4 }}
+            className="absolute inset-0 z-30 flex items-center justify-center bg-background/70 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.7, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 1.1, opacity: 0, y: -30 }}
+              transition={{ type: 'spring', stiffness: 200, damping: 20 }}
+              className="text-center px-8"
+            >
+              <motion.p
+                className="text-3xl md:text-4xl font-bold text-foreground font-['JetBrains_Mono'] drop-shadow-[0_0_20px_hsl(var(--primary)/0.5)]"
+                animate={{ textShadow: ['0 0 10px hsl(var(--primary)/0.3)', '0 0 30px hsl(var(--primary)/0.6)', '0 0 10px hsl(var(--primary)/0.3)'] }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+              >
+                {gameState.currentSentence.words.map(w => w.word).join(' ')}
+              </motion.p>
+              <motion.p
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+                className="text-muted-foreground mt-4 text-lg"
+              >
+                "{gameState.currentSentence.english}"
+              </motion.p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <SatzGameStats
         level={level}
         score={gameState.score}
@@ -205,13 +285,15 @@ export const SatzSplitterArena = ({ level, onBackToMenu }: SatzSplitterArenaProp
         streak={gameState.streak}
         timeLeft={gameState.timeLeft}
         maxTime={levelInfo.timeLimit}
+        isPaused={gameState.isPaused}
         onBack={onBackToMenu}
+        onTogglePause={handleTogglePause}
       />
 
       {/* Game Area */}
       <div className="flex-1 flex flex-col items-center justify-center p-4 md:p-6 gap-8">
         {/* English hint */}
-        {gameState.currentSentence && (
+        {gameState.currentSentence && !gameState.showIntro && (
           <motion.div
             key={gameState.sentenceKey + '-hint'}
             initial={{ opacity: 0, y: -20 }}
@@ -230,8 +312,8 @@ export const SatzSplitterArena = ({ level, onBackToMenu }: SatzSplitterArenaProp
           </motion.div>
         )}
 
-        {/* Sentence Slots (Ghost Outline) */}
-        {gameState.currentSentence && (
+        {/* Sentence Slots */}
+        {gameState.currentSentence && !gameState.showIntro && (
           <SentenceSlots
             key={gameState.sentenceKey + '-slots'}
             sentence={gameState.currentSentence}
@@ -241,23 +323,25 @@ export const SatzSplitterArena = ({ level, onBackToMenu }: SatzSplitterArenaProp
         )}
 
         {/* Word Pool */}
-        <motion.div
-          key={gameState.sentenceKey + '-pool'}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex flex-wrap justify-center gap-3 max-w-3xl"
-        >
-          {gameState.shuffledWords.map((word, index) => (
-            <DraggableSatzWord
-              key={`${word.word}-${word.position}-${index}`}
-              word={word}
-              onDrop={handlePlaceWord}
-            />
-          ))}
-        </motion.div>
+        {!gameState.showIntro && (
+          <motion.div
+            key={gameState.sentenceKey + '-pool'}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex flex-wrap justify-center gap-3 max-w-3xl"
+          >
+            {gameState.shuffledWords.map((word, index) => (
+              <DraggableSatzWord
+                key={`${word.word}-${word.position}-${index}`}
+                word={word}
+                onDrop={handlePlaceWord}
+              />
+            ))}
+          </motion.div>
+        )}
       </div>
 
-      {/* Game Over Overlay */}
+      {/* Game Over */}
       <AnimatePresence>
         {gameState.isGameOver && (
           <SatzGameOver

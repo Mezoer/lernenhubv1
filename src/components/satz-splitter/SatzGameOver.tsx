@@ -25,14 +25,14 @@ export const SatzGameOver = ({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="absolute inset-0 z-50 flex items-center justify-center bg-background/90 backdrop-blur-md p-6"
+      className="absolute inset-0 z-50 flex items-center justify-center bg-background/90 backdrop-blur-md p-6 overflow-hidden"
     >
       <motion.div
         initial={{ scale: 0.8, y: 30 }}
         animate={{ scale: 1, y: 0 }}
         exit={{ scale: 0.8, y: 30 }}
         transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-        className="w-full max-w-md text-center"
+        className="w-full max-w-md text-center overflow-hidden"
       >
         {/* Icon */}
         <motion.div
@@ -82,9 +82,7 @@ export const SatzGameOver = ({
           transition={{ delay: 0.4 }}
           className="mb-8"
         >
-          <p className="text-sm text-muted-foreground uppercase tracking-wider mb-1">
-            Your Score
-          </p>
+          <p className="text-sm text-muted-foreground uppercase tracking-wider mb-1">Your Score</p>
           <p className="text-6xl font-bold text-primary">{score}</p>
           {!isNewHighScore && highScore > 0 && (
             <p className="text-sm text-muted-foreground mt-2">
