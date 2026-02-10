@@ -1401,7 +1401,7 @@ export const SENTENCE_LEVEL_INFO: Record<Level, { name: string; description: str
   A1: { name: 'A1', description: 'Simple main clauses', timeLimit: 30 },
   A2: { name: 'A2', description: 'Time & Place expressions', timeLimit: 28 },
   B1: { name: 'B1', description: 'Subordinate clauses', timeLimit: 24 },
-  B2: { name: 'B2', description: 'Complex conjunctions', timeLimit: 24 },
+  B2: { name: 'B2', description: 'Complex conjunctions', timeLimit: 30 },
   C1: { name: 'C1', description: 'Passive constructions', timeLimit: 26 },
   C2: { name: 'C2', description: 'Literary structures', timeLimit: 32 },
 };
