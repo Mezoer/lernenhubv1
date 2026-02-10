@@ -1,11 +1,18 @@
 import { motion } from 'framer-motion';
 import { Level, LEVEL_INFO } from '@/data/wordDatabase';
-import { Trophy, RotateCcw, Home, Star } from 'lucide-react';
+import { Sentence, SentenceWord } from '@/data/sentenceDatabase';
+import { Trophy, RotateCcw, Home, Star, AlertCircle } from 'lucide-react';
+
+interface FailedSentence {
+  sentence: Sentence;
+  placedWords: (SentenceWord | null)[];
+}
 
 interface SatzGameOverProps {
   score: number;
   level: Level;
   highScore: number;
+  failedSentences?: FailedSentence[];
   onRestart: () => void;
   onBackToMenu: () => void;
 }
@@ -14,11 +21,17 @@ export const SatzGameOver = ({
   score,
   level,
   highScore,
+  failedSentences = [],
   onRestart,
   onBackToMenu,
 }: SatzGameOverProps) => {
   const isNewHighScore = score >= highScore && score > 0;
   const levelInfo = LEVEL_INFO[level];
+
+  // Deduplicate by sentence english text
+  const uniqueFailed = failedSentences.filter(
+    (f, i, arr) => arr.findIndex(x => x.sentence.english === f.sentence.english) === i
+  );
 
   return (
     <motion.div
@@ -32,7 +45,8 @@ export const SatzGameOver = ({
         animate={{ scale: 1, y: 0 }}
         exit={{ scale: 0.8, y: 30 }}
         transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-        className="w-full max-w-md text-center overflow-hidden"
+        className="w-full max-w-lg text-center max-h-[90vh] overflow-y-auto"
+        style={{ scrollbarWidth: 'none' }}
       >
         {/* Icon */}
         <motion.div
@@ -57,7 +71,7 @@ export const SatzGameOver = ({
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="text-3xl md:text-4xl font-bold text-foreground mb-2"
+          className="text-3xl md:text-4xl font-bold text-foreground mb-2 font-['JetBrains_Mono']"
         >
           {isNewHighScore ? 'New High Score!' : 'Game Over'}
         </motion.h2>
@@ -80,7 +94,7 @@ export const SatzGameOver = ({
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.4 }}
-          className="mb-8"
+          className="mb-6"
         >
           <p className="text-sm text-muted-foreground uppercase tracking-wider mb-1">Your Score</p>
           <p className="text-6xl font-bold text-primary">{score}</p>
@@ -90,6 +104,50 @@ export const SatzGameOver = ({
             </p>
           )}
         </motion.div>
+
+        {/* Failed Sentences Review */}
+        {uniqueFailed.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.45 }}
+            className="mb-6 text-left bg-card rounded-2xl p-4 md:p-6 border border-border"
+          >
+            <div className="flex items-center gap-2 mb-4">
+              <AlertCircle className="w-5 h-5 text-destructive" />
+              <h3 className="font-bold text-lg text-foreground">Sentences to Review</h3>
+            </div>
+            
+            <div className="space-y-4">
+              {uniqueFailed.slice(0, 5).map((failed, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.5 + index * 0.1 }}
+                  className="border-b border-border pb-3 last:border-0"
+                >
+                  <p className="text-sm text-muted-foreground mb-1">
+                    English: <span className="text-foreground font-medium">"{failed.sentence.english}"</span>
+                  </p>
+                  <p className="text-sm text-primary font-semibold">
+                    Correct: {failed.sentence.words.map(w => w.word).join(' ')}
+                  </p>
+                  {failed.sentence.hint && (
+                    <p className="text-xs text-muted-foreground mt-1 italic">
+                      💡 {failed.sentence.hint}
+                    </p>
+                  )}
+                </motion.div>
+              ))}
+              {uniqueFailed.length > 5 && (
+                <p className="text-sm text-muted-foreground italic">
+                  +{uniqueFailed.length - 5} more sentences...
+                </p>
+              )}
+            </div>
+          </motion.div>
+        )}
 
         {/* Buttons */}
         <motion.div
