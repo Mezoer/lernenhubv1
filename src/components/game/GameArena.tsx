@@ -222,24 +222,22 @@ export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
     setGameState((prev) => ({ ...prev, isDragging: true }));
   }, [updateZonePositions]);
 
-  const handleDragEnd = useCallback((wordRect: DOMRect, wordSnapshot: Word) => {
-    // Use the snapshot of the word at drag time to prevent race conditions
-    const wordCenterX = wordRect.left + wordRect.width / 2;
-    const wordCenterY = wordRect.top + wordRect.height / 2;
+  const handleDragEnd = useCallback((pointerPos: { x: number; y: number }, wordSnapshot: Word) => {
+    const pointerX = pointerPos.x;
+    const pointerY = pointerPos.y;
 
-    // Check which zone the word was dropped in by querying DOM directly
+    // Check which zone the pointer is over
     let droppedInZone: Artikel | null = null;
     
     ARTICLES.forEach((artikel) => {
       const zoneElement = document.getElementById(`zone-${artikel}`);
       if (zoneElement) {
         const rect = zoneElement.getBoundingClientRect();
-        // Check if word center overlaps with zone
         if (
-          wordCenterX >= rect.left &&
-          wordCenterX <= rect.right &&
-          wordCenterY >= rect.top &&
-          wordCenterY <= rect.bottom
+          pointerX >= rect.left &&
+          pointerX <= rect.right &&
+          pointerY >= rect.top &&
+          pointerY <= rect.bottom
         ) {
           droppedInZone = artikel;
         }
@@ -247,7 +245,6 @@ export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
     });
 
     if (droppedInZone) {
-      // Compare against the snapshot, not current state
       const isCorrect = droppedInZone === wordSnapshot.artikel;
       if (isCorrect) {
         handleCorrect(droppedInZone);
@@ -318,7 +315,15 @@ export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
               className="text-center"
             >
               <h2 className="text-4xl font-bold text-foreground mb-4 font-['JetBrains_Mono']">Paused</h2>
-              <p className="text-muted-foreground">Press the play button to continue</p>
+              <p className="text-muted-foreground mb-6">Game is paused</p>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={handleTogglePause}
+                className="px-8 py-3 rounded-xl bg-gradient-to-r from-accent to-primary text-primary-foreground font-semibold text-lg"
+              >
+                Resume
+              </motion.button>
             </motion.div>
           </motion.div>
         )}

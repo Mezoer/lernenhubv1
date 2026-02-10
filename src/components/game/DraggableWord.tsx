@@ -2,6 +2,8 @@ import { useRef, useEffect, useCallback } from 'react';
 import { motion, useMotionValue, useTransform, PanInfo } from 'framer-motion';
 import { Word } from '@/data/wordDatabase';
 
+type PointInfo = { x: number; y: number };
+
 interface DraggableWordProps {
   word: Word;
   wordKey: string;
@@ -10,7 +12,7 @@ interface DraggableWordProps {
   isDragging: boolean;
   isPaused: boolean;
   onDragStart: () => void;
-  onDragEnd: (wordRect: DOMRect, wordSnapshot: Word) => void;
+  onDragEnd: (pointerPos: PointInfo, wordSnapshot: Word) => void;
   onHitFloor: () => void;
   gameHeight: number;
 }
@@ -78,11 +80,12 @@ export const DraggableWord = ({
     };
   }, [animate]);
 
-  const handleDragEnd = useCallback(() => {
-    if (wordRef.current) {
-      const rect = wordRef.current.getBoundingClientRect();
-      onDragEnd(rect, word);
-    }
+  const handleDragEnd = useCallback((_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+    // Use pointer position from PanInfo - much more reliable than element rect
+    // which may already be snapping back
+    const pointerX = info.point.x;
+    const pointerY = info.point.y;
+    onDragEnd({ x: pointerX, y: pointerY }, word);
   }, [onDragEnd, word]);
 
   return (

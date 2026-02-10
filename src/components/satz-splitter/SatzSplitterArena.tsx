@@ -33,6 +33,8 @@ interface GameState {
   showFeedback: 'correct' | 'incorrect' | null;
   isFirstRound: boolean;
   showIntro: boolean;
+  showHint: boolean;
+  failedSentences: { sentence: Sentence; placedWords: (SentenceWord | null)[] }[];
 }
 
 export const SatzSplitterArena = ({ level, onBackToMenu }: SatzSplitterArenaProps) => {
@@ -59,6 +61,8 @@ export const SatzSplitterArena = ({ level, onBackToMenu }: SatzSplitterArenaProp
       showFeedback: null,
       isFirstRound: true,
       showIntro: true,
+      showHint: false,
+      failedSentences: [],
     };
   }, [level, levelInfo.timeLimit]);
 
@@ -125,9 +129,14 @@ export const SatzSplitterArena = ({ level, onBackToMenu }: SatzSplitterArenaProp
     setGameState(prev => {
       if (!prev.currentSentence) return prev;
 
-      // If it's a distractor, always wrong
+      // If it's a distractor, always wrong - deduct heart
       if (word.isDistractor) {
-        return { ...prev, showFeedback: 'incorrect', streak: 0 };
+        const newLives = prev.lives - 1;
+        const newFailed = [...prev.failedSentences, { sentence: prev.currentSentence, placedWords: prev.placedWords }];
+        if (newLives <= 0) {
+          return { ...prev, showFeedback: 'incorrect', streak: 0, lives: 0, isGameOver: true, failedSentences: newFailed };
+        }
+        return { ...prev, showFeedback: 'incorrect', streak: 0, lives: newLives, failedSentences: newFailed };
       }
 
       const isCorrect = word.position === slotIndex + 1;
@@ -165,6 +174,7 @@ export const SatzSplitterArena = ({ level, onBackToMenu }: SatzSplitterArenaProp
                 timeLeft: levelInfo.timeLimit,
                 isFirstRound: false,
                 showIntro: false,
+                showHint: false,
               };
             });
           }, 800);
@@ -186,7 +196,11 @@ export const SatzSplitterArena = ({ level, onBackToMenu }: SatzSplitterArenaProp
           showFeedback: 'correct',
         };
       } else {
-        return { ...prev, showFeedback: 'incorrect', streak: 0 };
+        const newLives = prev.lives - 1;
+        if (newLives <= 0) {
+          return { ...prev, showFeedback: 'incorrect', streak: 0, lives: 0, isGameOver: true };
+        }
+        return { ...prev, showFeedback: 'incorrect', streak: 0, lives: newLives };
       }
     });
   }, [highScore, level, levelInfo.timeLimit]);
@@ -235,7 +249,15 @@ export const SatzSplitterArena = ({ level, onBackToMenu }: SatzSplitterArenaProp
               className="text-center"
             >
               <h2 className="text-4xl font-bold text-foreground mb-4 font-['JetBrains_Mono']">Paused</h2>
-              <p className="text-muted-foreground">Press the play button to continue</p>
+              <p className="text-muted-foreground mb-6">Game is paused</p>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={handleTogglePause}
+                className="px-8 py-3 rounded-xl bg-gradient-to-r from-accent to-primary text-primary-foreground font-semibold text-lg"
+              >
+                Resume
+              </motion.button>
             </motion.div>
           </motion.div>
         )}
@@ -304,10 +326,24 @@ export const SatzSplitterArena = ({ level, onBackToMenu }: SatzSplitterArenaProp
             <p className="text-lg md:text-xl text-foreground font-medium">
               "{gameState.currentSentence.english}"
             </p>
-            {gameState.currentSentence.hint && (
-              <p className="text-xs text-muted-foreground mt-2 italic">
+            {gameState.currentSentence.hint && !gameState.showHint && (
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setGameState(prev => ({ ...prev, showHint: true }))}
+                className="mt-3 px-4 py-1.5 rounded-lg bg-secondary/50 hover:bg-secondary text-muted-foreground text-sm font-medium transition-colors"
+              >
+                💡 Show Hint
+              </motion.button>
+            )}
+            {gameState.currentSentence.hint && gameState.showHint && (
+              <motion.p
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-xs text-muted-foreground mt-3 italic bg-secondary/30 px-4 py-2 rounded-lg"
+              >
                 💡 {gameState.currentSentence.hint}
-              </p>
+              </motion.p>
             )}
           </motion.div>
         )}
@@ -348,6 +384,7 @@ export const SatzSplitterArena = ({ level, onBackToMenu }: SatzSplitterArenaProp
             score={gameState.score}
             level={level}
             highScore={highScore}
+            failedSentences={gameState.failedSentences}
             onRestart={handleRestart}
             onBackToMenu={onBackToMenu}
           />
