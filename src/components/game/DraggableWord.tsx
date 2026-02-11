@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback } from 'react';
+import { useRef, useEffect, useCallback, useState } from 'react';
 import { motion, useMotionValue, useTransform, PanInfo } from 'framer-motion';
 import { Word } from '@/data/wordDatabase';
 
@@ -34,6 +34,10 @@ export const DraggableWord = ({
   const animationRef = useRef<number | null>(null);
   const lastTimeRef = useRef<number>(performance.now());
   const hasStartedRef = useRef(false);
+  // Track the Y value before dragging so we can restore it on failed drop
+  const preDragY = useRef<number>(0);
+  // Track drag velocity for tilt
+  const [dragVelocityX, setDragVelocityX] = useState(0);
   
   const floorY = gameHeight - 200;
 
@@ -80,13 +84,46 @@ export const DraggableWord = ({
     };
   }, [animate]);
 
+  const handleDragStart = useCallback(() => {
+    // Save Y position before drag so we can restore on failed drop
+    preDragY.current = y.get();
+    onDragStart();
+  }, [onDragStart, y]);
+
+  const handleDrag = useCallback((_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+    // Track velocity for tilt effect
+    setDragVelocityX(info.velocity.x);
+  }, []);
+
   const handleDragEnd = useCallback((_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    // Use pointer position from PanInfo - much more reliable than element rect
-    // which may already be snapping back
+    setDragVelocityX(0);
     const pointerX = info.point.x;
     const pointerY = info.point.y;
+
+    // Check if pointer is over any zone
+    const zones = ['der', 'das', 'die'];
+    let overZone = false;
+    for (const artikel of zones) {
+      const el = document.getElementById(`zone-${artikel}`);
+      if (el) {
+        const rect = el.getBoundingClientRect();
+        if (pointerX >= rect.left && pointerX <= rect.right && pointerY >= rect.top && pointerY <= rect.bottom) {
+          overZone = true;
+          break;
+        }
+      }
+    }
+
+    if (!overZone) {
+      // Restore Y to pre-drag position so word doesn't instantly hit floor
+      y.set(preDragY.current);
+    }
+
     onDragEnd({ x: pointerX, y: pointerY }, word);
-  }, [onDragEnd, word]);
+  }, [onDragEnd, word, y]);
+
+  // Compute tilt from drag velocity (subtle, satisfying)
+  const tilt = Math.max(-12, Math.min(12, dragVelocityX * 0.015));
 
   return (
     <motion.div
@@ -97,11 +134,12 @@ export const DraggableWord = ({
       dragElastic={0.05}
       dragMomentum={false}
       dragTransition={{ bounceStiffness: 600, bounceDamping: 30 }}
-      onDragStart={onDragStart}
+      onDragStart={handleDragStart}
+      onDrag={handleDrag}
       onDragEnd={handleDragEnd}
       style={{ y }}
       initial={{ opacity: 0, scale: 0.8, y: -20 }}
-      animate={{ opacity: 1, scale: 1 }}
+      animate={{ opacity: 1, scale: 1, rotate: tilt }}
       exit={{ 
         opacity: 0, 
         scale: 1.3,
@@ -110,8 +148,8 @@ export const DraggableWord = ({
       whileDrag={{
         scale: 1.1,
         zIndex: 50,
-        rotate: 0,
       }}
+      transition={{ rotate: { type: 'spring', stiffness: 300, damping: 20 } }}
       className="absolute left-1/2 -translate-x-1/2 top-8 select-none cursor-grab active:cursor-grabbing"
     >
       <motion.div

@@ -21,9 +21,9 @@ export const GameHub = ({
       ease: 'easeOut'
     }} className="text-center mb-12">
         <h1 className="text-5xl md:text-7xl font-bold mb-4 font-['JetBrains_Mono']">
-          <span className="inline-block text-black drop-shadow-[0_0_15px_rgba(0,0,0,0.8)]">Ler</span>
-          <span className="inline-block text-[hsl(45,100%,50%)] drop-shadow-[0_0_15px_rgba(255,200,0,0.6)]">nen</span>
-          <span className="inline-block text-[hsl(0,85%,45%)] drop-shadow-[0_0_15px_rgba(200,50,50,0.6)]">{' '}Hub</span>
+          <span className="bg-gradient-to-r from-black via-[hsl(45,100%,50%)] to-[hsl(0,85%,45%)] bg-clip-text text-transparent">
+            Lernen Hub
+          </span>
         </h1>
         <p className="text-lg md:text-xl text-muted-foreground max-w-md mx-auto">
           Master <span className="font-bold">

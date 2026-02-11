@@ -252,7 +252,7 @@ export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
         handleIncorrect(droppedInZone, wordSnapshot);
       }
     } else {
-      // Dropped outside zones, resume falling
+      // Dropped outside zones — reset Y to safe position so word doesn't immediately hit floor
       setGameState((prev) => ({ ...prev, isDragging: false }));
     }
   }, [handleCorrect, handleIncorrect]);
