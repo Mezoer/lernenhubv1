@@ -2,14 +2,11 @@ import { motion } from 'framer-motion';
 import { Level, LEVEL_INFO } from '@/data/wordDatabase';
 import { Zap, ArrowLeft } from 'lucide-react';
 import { KofiFooter } from '@/components/hub/KofiFooter';
-
 interface LevelSelectProps {
   onSelectLevel: (level: Level) => void;
   onBack?: () => void;
 }
-
 const levels: Level[] = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
-
 const container = {
   hidden: {
     opacity: 0
@@ -21,7 +18,6 @@ const container = {
     }
   }
 };
-
 const item = {
   hidden: {
     opacity: 0,
@@ -32,24 +28,22 @@ const item = {
     y: 0
   }
 };
-
 export const LevelSelect = ({
   onSelectLevel,
   onBack
 }: LevelSelectProps) => {
   return <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-[image:var(--gradient-game-bg)] relative">
       {/* Back Button */}
-      {onBack && (
-        <motion.button
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          onClick={onBack}
-          className="absolute top-6 left-6 flex items-center gap-2 px-4 py-2 rounded-xl bg-secondary/50 hover:bg-secondary text-foreground transition-colors"
-        >
+      {onBack && <motion.button initial={{
+      opacity: 0,
+      x: -20
+    }} animate={{
+      opacity: 1,
+      x: 0
+    }} onClick={onBack} className="absolute top-6 left-6 flex items-center gap-2 px-4 py-2 rounded-xl bg-secondary/50 hover:bg-secondary text-foreground transition-colors">
           <ArrowLeft className="w-4 h-4" />
           <span className="text-sm font-medium">Back</span>
-        </motion.button>
-      )}
+        </motion.button>}
       {/* Header */}
       <motion.div initial={{
       opacity: 0,
@@ -103,15 +97,7 @@ export const LevelSelect = ({
       </motion.div>
 
       {/* Footer hint */}
-      <motion.p initial={{
-      opacity: 0
-    }} animate={{
-      opacity: 1
-    }} transition={{
-      delay: 0.8
-    }} className="mt-12 text-sm text-muted-foreground">
-        Vocabulary gets harder with each level!
-      </motion.p>
+      
 
       <KofiFooter />
     </div>;
