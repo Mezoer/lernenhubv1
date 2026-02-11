@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { Level } from '@/data/wordDatabase';
 import { SENTENCE_LEVEL_INFO } from '@/data/sentenceDatabase';
 import { ArrowLeft, Timer } from 'lucide-react';
+import { KofiFooter } from '@/components/hub/KofiFooter';
 
 interface SatzLevelSelectProps {
   onSelectLevel: (level: Level) => void;
@@ -104,6 +105,8 @@ export const SatzLevelSelect = ({ onSelectLevel, onBack }: SatzLevelSelectProps)
       >
         Word order gets more complex at higher levels!
       </motion.p>
+
+      <KofiFooter />
     </div>
   );
 };
