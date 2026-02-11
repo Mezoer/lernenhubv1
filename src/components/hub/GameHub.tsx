@@ -64,7 +64,7 @@ export const GameHub = ({
                 Artikel-Drop
               </span>
             </h2>
-            <p className="text-sm md:text-base leading-relaxed text-gray-50">
+            <p className="text-sm md:text-base leading-relaxed text-[#fffcf5]">
               Catch falling words and sort them by their German article:{' '}
               <span className="text-[hsl(var(--der-color))] font-semibold">der</span>,{' '}
               <span className="text-[hsl(var(--das-color))] font-semibold">das</span>, or{' '}
@@ -110,7 +110,7 @@ export const GameHub = ({
                 Satz-Splitter
               </span>
             </h2>
-            <p className="text-sm md:text-base leading-relaxed text-gray-50">
+            <p className="text-sm md:text-base leading-relaxed text-[#fffcf5]">
               Rebuild German sentences by dragging words into the correct positions. Master German word order!
             </p>
           </div>
@@ -138,7 +138,7 @@ export const GameHub = ({
           <h3 className="text-xl md:text-2xl font-bold mb-4 font-['JetBrains_Mono'] bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent">
             The Story behind Lernen Hub
           </h3>
-          <p className="text-sm md:text-base leading-relaxed mb-6 text-zinc-50">
+          <p className="text-sm md:text-base leading-relaxed mb-6 text-[#fffcf5]">
             Hi! I'm a 15-year-old developer from Egypt. I built Lernen Hub to make German grammar fun and accessible for everyone. My goal is to keep this platform free, fast, and completely ad-free.
           </p>
 
