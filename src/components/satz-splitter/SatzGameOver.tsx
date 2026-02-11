@@ -111,7 +111,8 @@ export const SatzGameOver = ({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.45 }}
-            className="mb-6 text-left bg-card rounded-2xl p-4 md:p-6 border border-border"
+            className="mb-6 text-left bg-card rounded-2xl p-4 md:p-6 border border-border max-h-[300px] overflow-y-auto"
+            style={{ scrollbarWidth: 'none' }}
           >
             <div className="flex items-center gap-2 mb-4">
               <AlertCircle className="w-5 h-5 text-destructive" />

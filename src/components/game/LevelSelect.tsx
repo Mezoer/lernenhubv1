@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { Level, LEVEL_INFO } from '@/data/wordDatabase';
 import { Zap, ArrowLeft } from 'lucide-react';
+import { KofiFooter } from '@/components/hub/KofiFooter';
 
 interface LevelSelectProps {
   onSelectLevel: (level: Level) => void;
@@ -109,11 +110,9 @@ export const LevelSelect = ({
     }} transition={{
       delay: 0.8
     }} className="mt-12 text-sm text-muted-foreground">
-        
-        
-        Vocabulary gets harder with each level!       
-             
-             
+        Vocabulary gets harder with each level!
       </motion.p>
+
+      <KofiFooter />
     </div>;
 };

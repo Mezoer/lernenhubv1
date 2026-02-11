@@ -34,10 +34,9 @@ export const DraggableWord = ({
   const animationRef = useRef<number | null>(null);
   const lastTimeRef = useRef<number>(performance.now());
   const hasStartedRef = useRef(false);
-  // Track the Y value before dragging so we can restore it on failed drop
-  const preDragY = useRef<number>(0);
-  // Track drag velocity for tilt
   const [dragVelocityX, setDragVelocityX] = useState(0);
+  // Track whether drop was successful to control snapToOrigin
+  const dropSuccessRef = useRef(false);
   
   const floorY = gameHeight - 200;
 
@@ -85,10 +84,9 @@ export const DraggableWord = ({
   }, [animate]);
 
   const handleDragStart = useCallback(() => {
-    // Save Y position before drag so we can restore on failed drop
-    preDragY.current = y.get();
+    dropSuccessRef.current = false;
     onDragStart();
-  }, [onDragStart, y]);
+  }, [onDragStart]);
 
   const handleDrag = useCallback((_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     // Track velocity for tilt effect
@@ -100,27 +98,8 @@ export const DraggableWord = ({
     const pointerX = info.point.x;
     const pointerY = info.point.y;
 
-    // Check if pointer is over any zone
-    const zones = ['der', 'das', 'die'];
-    let overZone = false;
-    for (const artikel of zones) {
-      const el = document.getElementById(`zone-${artikel}`);
-      if (el) {
-        const rect = el.getBoundingClientRect();
-        if (pointerX >= rect.left && pointerX <= rect.right && pointerY >= rect.top && pointerY <= rect.bottom) {
-          overZone = true;
-          break;
-        }
-      }
-    }
-
-    if (!overZone) {
-      // Restore Y to pre-drag position so word doesn't instantly hit floor
-      y.set(preDragY.current);
-    }
-
     onDragEnd({ x: pointerX, y: pointerY }, word);
-  }, [onDragEnd, word, y]);
+  }, [onDragEnd, word]);
 
   // Compute tilt from drag velocity (subtle, satisfying)
   const tilt = Math.max(-12, Math.min(12, dragVelocityX * 0.015));
@@ -130,7 +109,7 @@ export const DraggableWord = ({
       ref={wordRef}
       key={wordKey}
       drag
-      dragConstraints={containerRef}
+      dragSnapToOrigin
       dragElastic={0.05}
       dragMomentum={false}
       dragTransition={{ bounceStiffness: 600, bounceDamping: 30 }}
