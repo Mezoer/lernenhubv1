@@ -144,7 +144,7 @@ export const GameHub = ({
 
           {/* Support CTA */}
           <div className="rounded-2xl p-4 md:p-5 bg-secondary/30 border border-border/30">
-            <p className="text-muted-foreground text-sm leading-relaxed mb-4">
+            <p className="text-sm leading-relaxed mb-4 text-[#9faeb7]">
               Donating helps me cover domain hosting costs and ensures the game stays free of ads and in-game purchases.
             </p>
             <a href="https://ko-fi.com/mezohehe" target="_blank" rel="noopener noreferrer">
