@@ -20,10 +20,10 @@ export const GameHub = ({
       duration: 0.6,
       ease: 'easeOut'
     }} className="text-center mb-12">
-        <h1 className="text-5xl md:text-7xl font-bold mb-4 font-['JetBrains_Mono'] text-foreground">
+        <h1 className="text-5xl md:text-7xl font-bold mb-4 font-['JetBrains_Mono'] text-[#fff1e6]">
           Lernen Hub
         </h1>
-        <p className="text-lg md:text-xl text-muted-foreground max-w-md mx-auto">
+        <p className="text-lg md:text-xl max-w-md mx-auto text-[#9faeb7]">
           Master German with fun, interactive games
         </p>
       </motion.div>
