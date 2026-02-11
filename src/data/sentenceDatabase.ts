@@ -1398,8 +1398,8 @@ export const SENTENCE_DATABASE: Record<Level, Sentence[]> = {
 
 // Level metadata for Satz-Splitter - UPDATED TIMES
 export const SENTENCE_LEVEL_INFO: Record<Level, { name: string; description: string; timeLimit: number }> = {
-  A1: { name: 'A1', description: 'Simple main clauses', timeLimit: 30 },
-  A2: { name: 'A2', description: 'Time & Place expressions', timeLimit: 28 },
+  A1: { name: 'A1', description: 'Simple main clauses', timeLimit: 20 },
+  A2: { name: 'A2', description: 'Time & Place expressions', timeLimit: 22 },
   B1: { name: 'B1', description: 'Subordinate clauses', timeLimit: 24 },
   B2: { name: 'B2', description: 'Complex conjunctions', timeLimit: 30 },
   C1: { name: 'C1', description: 'Passive constructions', timeLimit: 26 },
