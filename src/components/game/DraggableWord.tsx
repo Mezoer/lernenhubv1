@@ -83,9 +83,14 @@ export const DraggableWord = ({
   }, [animate]);
 
   // --- Manual pointer handlers for 1:1 tracking ---
+  const pointerIdRef = useRef<number | null>(null);
+
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
     e.preventDefault();
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    e.stopPropagation();
+    pointerIdRef.current = e.pointerId;
+    // Capture on the outer ref element so all events route here
+    wordRef.current?.setPointerCapture(e.pointerId);
     draggingRef.current = true;
     pointerStartRef.current = { x: e.clientX, y: e.clientY };
     valueStartRef.current = { x: x.get(), y: y.get() };
@@ -94,30 +99,39 @@ export const DraggableWord = ({
     onDragStart();
   }, [onDragStart, x, y]);
 
-  const handlePointerMove = useCallback((e: React.PointerEvent) => {
-    if (!draggingRef.current) return;
-    const dx = e.clientX - pointerStartRef.current.x;
-    const dy = e.clientY - pointerStartRef.current.y;
-    x.set(valueStartRef.current.x + dx);
-    y.set(valueStartRef.current.y + dy);
+  // Use window-level listeners so we never lose the pointer
+  useEffect(() => {
+    const onMove = (e: PointerEvent) => {
+      if (!draggingRef.current) return;
+      const dx = e.clientX - pointerStartRef.current.x;
+      const dy = e.clientY - pointerStartRef.current.y;
+      x.set(valueStartRef.current.x + dx);
+      y.set(valueStartRef.current.y + dy);
 
-    // Tilt from horizontal velocity
-    const vx = e.clientX - lastPointerRef.current.x;
-    setTilt(Math.max(-12, Math.min(12, vx * 0.8)));
-    lastPointerRef.current = { x: e.clientX, y: e.clientY };
-  }, [x, y]);
+      const vx = e.clientX - lastPointerRef.current.x;
+      setTilt(Math.max(-12, Math.min(12, vx * 0.8)));
+      lastPointerRef.current = { x: e.clientX, y: e.clientY };
+    };
 
-  const handlePointerUp = useCallback((e: React.PointerEvent) => {
-    if (!draggingRef.current) return;
-    draggingRef.current = false;
-    setTilt(0);
+    const onUp = (e: PointerEvent) => {
+      if (!draggingRef.current) return;
+      draggingRef.current = false;
+      pointerIdRef.current = null;
+      setTilt(0);
+      x.set(0);
+      lastTimeRef.current = performance.now();
+      onDragEnd({ x: e.clientX, y: e.clientY }, word);
+    };
 
-    // Reset x back to center, keep y where it is so gravity continues from there
-    x.set(0);
-    lastTimeRef.current = performance.now();
-
-    onDragEnd({ x: e.clientX, y: e.clientY }, word);
-  }, [onDragEnd, word, x]);
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onUp);
+    return () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onUp);
+    };
+  }, [x, y, onDragEnd, word]);
 
   return (
     <motion.div
@@ -125,7 +139,7 @@ export const DraggableWord = ({
       key={wordKey}
       style={{ x, y }}
       initial={{ opacity: 0, scale: 0.8 }}
-      animate={{ opacity: 1, scale: draggingRef.current ? 1.1 : 1, rotate: tilt }}
+      animate={{ opacity: 1, scale: 1, rotate: tilt }}
       exit={{
         opacity: 0,
         scale: 1.3,
@@ -133,9 +147,6 @@ export const DraggableWord = ({
       }}
       transition={{ rotate: { type: 'spring', stiffness: 300, damping: 20 } }}
       onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      onPointerCancel={handlePointerUp}
       className="absolute left-1/2 -translate-x-1/2 top-8 select-none touch-none cursor-grab active:cursor-grabbing"
     >
       <motion.div
