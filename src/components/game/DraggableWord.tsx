@@ -30,13 +30,13 @@ export const DraggableWord = ({
   gameHeight,
 }: DraggableWordProps) => {
   const y = useMotionValue(0);
+  const x = useMotionValue(0);
   const wordRef = useRef<HTMLDivElement>(null);
   const animationRef = useRef<number | null>(null);
   const lastTimeRef = useRef<number>(performance.now());
   const hasStartedRef = useRef(false);
   const [dragVelocityX, setDragVelocityX] = useState(0);
-  // Track whether drop was successful to control snapToOrigin
-  const dropSuccessRef = useRef(false);
+  const isDraggingRef = useRef(false);
   
   const floorY = gameHeight - 200;
 
@@ -45,7 +45,7 @@ export const DraggableWord = ({
 
   // Gravity animation loop
   const animate = useCallback((currentTime: number) => {
-    if (isDragging || isPaused) {
+    if (isDraggingRef.current || isPaused) {
       lastTimeRef.current = currentTime;
       animationRef.current = requestAnimationFrame(animate);
       return;
@@ -66,7 +66,7 @@ export const DraggableWord = ({
 
     y.set(newY);
     animationRef.current = requestAnimationFrame(animate);
-  }, [isDragging, isPaused, fallSpeed, floorY, y, onHitFloor]);
+  }, [isPaused, fallSpeed, floorY, y, onHitFloor]);
 
   useEffect(() => {
     const startDelay = setTimeout(() => {
@@ -84,22 +84,32 @@ export const DraggableWord = ({
   }, [animate]);
 
   const handleDragStart = useCallback(() => {
-    dropSuccessRef.current = false;
+    isDraggingRef.current = true;
     onDragStart();
   }, [onDragStart]);
 
   const handleDrag = useCallback((_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    // Track velocity for tilt effect
     setDragVelocityX(info.velocity.x);
   }, []);
 
   const handleDragEnd = useCallback((_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     setDragVelocityX(0);
+    isDraggingRef.current = false;
+    
     const pointerX = info.point.x;
     const pointerY = info.point.y;
 
+    // Absorb the drag offset into the gravity y so it continues from where it was dropped
+    const currentY = y.get();
+    y.set(currentY + info.offset.y);
+    // Reset x back to center
+    x.set(0);
+    
+    // Reset the time ref so gravity doesn't jump
+    lastTimeRef.current = performance.now();
+
     onDragEnd({ x: pointerX, y: pointerY }, word);
-  }, [onDragEnd, word]);
+  }, [onDragEnd, word, y, x]);
 
   // Compute tilt from drag velocity (subtle, satisfying)
   const tilt = Math.max(-12, Math.min(12, dragVelocityX * 0.015));
@@ -109,15 +119,13 @@ export const DraggableWord = ({
       ref={wordRef}
       key={wordKey}
       drag
-      dragSnapToOrigin
-      dragElastic={0.05}
+      dragElastic={0}
       dragMomentum={false}
-      dragTransition={{ bounceStiffness: 600, bounceDamping: 30 }}
       onDragStart={handleDragStart}
       onDrag={handleDrag}
       onDragEnd={handleDragEnd}
-      style={{ y }}
-      initial={{ opacity: 0, scale: 0.8, y: -20 }}
+      style={{ y, x }}
+      initial={{ opacity: 0, scale: 0.8 }}
       animate={{ opacity: 1, scale: 1, rotate: tilt }}
       exit={{ 
         opacity: 0, 
