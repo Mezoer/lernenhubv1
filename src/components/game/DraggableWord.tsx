@@ -1,5 +1,5 @@
 import { useRef, useEffect, useCallback, useState } from 'react';
-import { motion, useMotionValue, useTransform, PanInfo } from 'framer-motion';
+import { motion, useMotionValue, useTransform } from 'framer-motion';
 import { Word } from '@/data/wordDatabase';
 
 type PointInfo = { x: number; y: number };
@@ -29,23 +29,26 @@ export const DraggableWord = ({
   onHitFloor,
   gameHeight,
 }: DraggableWordProps) => {
-  const y = useMotionValue(0);
   const x = useMotionValue(0);
+  const y = useMotionValue(0);
   const wordRef = useRef<HTMLDivElement>(null);
   const animationRef = useRef<number | null>(null);
   const lastTimeRef = useRef<number>(performance.now());
-  const hasStartedRef = useRef(false);
-  const [dragVelocityX, setDragVelocityX] = useState(0);
-  const isDraggingRef = useRef(false);
-  
+  const [tilt, setTilt] = useState(0);
+
+  // Pointer tracking refs
+  const draggingRef = useRef(false);
+  const pointerStartRef = useRef<PointInfo>({ x: 0, y: 0 });
+  const valueStartRef = useRef<PointInfo>({ x: 0, y: 0 });
+  const lastPointerRef = useRef<PointInfo>({ x: 0, y: 0 });
+
   const floorY = gameHeight - 200;
 
-  // Subtle glow based on fall position
   const glowIntensity = useTransform(y, [0, floorY / 2, floorY], [0.3, 0.5, 0.8]);
 
-  // Gravity animation loop
+  // Gravity loop — only runs when NOT dragging
   const animate = useCallback((currentTime: number) => {
-    if (isDraggingRef.current || isPaused) {
+    if (draggingRef.current || isPaused) {
       lastTimeRef.current = currentTime;
       animationRef.current = requestAnimationFrame(animate);
       return;
@@ -54,7 +57,7 @@ export const DraggableWord = ({
     const deltaTime = (currentTime - lastTimeRef.current) / 1000;
     lastTimeRef.current = currentTime;
     const clampedDelta = Math.min(deltaTime, 0.1);
-    
+
     const currentY = y.get();
     const newY = currentY + fallSpeed * 120 * clampedDelta;
 
@@ -70,74 +73,70 @@ export const DraggableWord = ({
 
   useEffect(() => {
     const startDelay = setTimeout(() => {
-      hasStartedRef.current = true;
       lastTimeRef.current = performance.now();
       animationRef.current = requestAnimationFrame(animate);
     }, 100);
-    
     return () => {
       clearTimeout(startDelay);
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
+      if (animationRef.current) cancelAnimationFrame(animationRef.current);
     };
   }, [animate]);
 
-  const handleDragStart = useCallback(() => {
-    isDraggingRef.current = true;
+  // --- Manual pointer handlers for 1:1 tracking ---
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    e.preventDefault();
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    draggingRef.current = true;
+    pointerStartRef.current = { x: e.clientX, y: e.clientY };
+    valueStartRef.current = { x: x.get(), y: y.get() };
+    lastPointerRef.current = { x: e.clientX, y: e.clientY };
+    setTilt(0);
     onDragStart();
-  }, [onDragStart]);
+  }, [onDragStart, x, y]);
 
-  const handleDrag = useCallback((_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    setDragVelocityX(info.velocity.x);
-  }, []);
+  const handlePointerMove = useCallback((e: React.PointerEvent) => {
+    if (!draggingRef.current) return;
+    const dx = e.clientX - pointerStartRef.current.x;
+    const dy = e.clientY - pointerStartRef.current.y;
+    x.set(valueStartRef.current.x + dx);
+    y.set(valueStartRef.current.y + dy);
 
-  const handleDragEnd = useCallback((_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    setDragVelocityX(0);
-    isDraggingRef.current = false;
-    
-    const pointerX = info.point.x;
-    const pointerY = info.point.y;
+    // Tilt from horizontal velocity
+    const vx = e.clientX - lastPointerRef.current.x;
+    setTilt(Math.max(-12, Math.min(12, vx * 0.8)));
+    lastPointerRef.current = { x: e.clientX, y: e.clientY };
+  }, [x, y]);
 
-    // Absorb the drag offset into the gravity y so it continues from where it was dropped
-    const currentY = y.get();
-    y.set(currentY + info.offset.y);
-    // Reset x back to center
+  const handlePointerUp = useCallback((e: React.PointerEvent) => {
+    if (!draggingRef.current) return;
+    draggingRef.current = false;
+    setTilt(0);
+
+    // Reset x back to center, keep y where it is so gravity continues from there
     x.set(0);
-    
-    // Reset the time ref so gravity doesn't jump
     lastTimeRef.current = performance.now();
 
-    onDragEnd({ x: pointerX, y: pointerY }, word);
-  }, [onDragEnd, word, y, x]);
-
-  // Compute tilt from drag velocity (subtle, satisfying)
-  const tilt = Math.max(-12, Math.min(12, dragVelocityX * 0.015));
+    onDragEnd({ x: e.clientX, y: e.clientY }, word);
+  }, [onDragEnd, word, x]);
 
   return (
     <motion.div
       ref={wordRef}
       key={wordKey}
-      drag
-      dragElastic={0}
-      dragMomentum={false}
-      onDragStart={handleDragStart}
-      onDrag={handleDrag}
-      onDragEnd={handleDragEnd}
-      style={{ y, x }}
+      style={{ x, y }}
       initial={{ opacity: 0, scale: 0.8 }}
-      animate={{ opacity: 1, scale: 1, rotate: tilt }}
-      exit={{ 
-        opacity: 0, 
+      animate={{ opacity: 1, scale: draggingRef.current ? 1.1 : 1, rotate: tilt }}
+      exit={{
+        opacity: 0,
         scale: 1.3,
-        transition: { duration: 0.3, ease: 'easeOut' }
-      }}
-      whileDrag={{
-        scale: 1.1,
-        zIndex: 50,
+        transition: { duration: 0.3, ease: 'easeOut' },
       }}
       transition={{ rotate: { type: 'spring', stiffness: 300, damping: 20 } }}
-      className="absolute left-1/2 -translate-x-1/2 top-8 select-none cursor-grab active:cursor-grabbing"
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerUp}
+      className="absolute left-1/2 -translate-x-1/2 top-8 select-none touch-none cursor-grab active:cursor-grabbing"
     >
       <motion.div
         className="word-card relative overflow-hidden"
@@ -151,18 +150,14 @@ export const DraggableWord = ({
           ),
         }}
       >
-        {/* Subtle background glow */}
         <motion.div
           className="absolute inset-0 rounded-xl bg-gradient-to-b from-primary/15 to-transparent"
           animate={{ opacity: [0.2, 0.4, 0.2] }}
           transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
         />
-        
         <span className="relative z-10 text-2xl md:text-3xl font-bold text-foreground pointer-events-none">
           {word.word}
         </span>
-        
-        {/* Shimmer */}
         <motion.div
           className="absolute inset-0 rounded-xl bg-gradient-to-r from-transparent via-white/10 to-transparent"
           animate={{ x: ['-200%', '200%'] }}
