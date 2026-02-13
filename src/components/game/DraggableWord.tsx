@@ -132,8 +132,6 @@ export const DraggableWord = ({
       draggingRef.current = false;
       tiltRef.current = 0;
 
-      // Reset X to center, keep Y for gravity to continue
-      posRef.current.x = 0;
       lastTimeRef.current = performance.now();
       applyTransform();
 
