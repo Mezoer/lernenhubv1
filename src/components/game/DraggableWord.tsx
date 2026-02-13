@@ -114,8 +114,11 @@ export const DraggableWord = ({
 
     const onMove = (e: PointerEvent) => {
       if (!draggingRef.current) return;
+      
       const dx = e.clientX - pointerStartRef.current.x;
       const dy = e.clientY - pointerStartRef.current.y;
+      
+      // Update position
       posRef.current.x = posStartRef.current.x + dx;
       posRef.current.y = posStartRef.current.y + dy;
 

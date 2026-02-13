@@ -120,6 +120,12 @@
   body {
     @apply bg-background text-foreground antialiased;
     font-family: 'Space Grotesk', system-ui, sans-serif;
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+
+  body::-webkit-scrollbar {
+    display: none; /* Chrome, Safari and Opera */
   }
 }
 

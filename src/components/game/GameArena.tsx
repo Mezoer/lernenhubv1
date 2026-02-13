@@ -252,8 +252,43 @@ export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
         handleIncorrect(droppedInZone, wordSnapshot);
       }
     } else {
-      // Dropped outside zones — reset Y to safe position so word doesn't immediately hit floor
-      setGameState((prev) => ({ ...prev, isDragging: false }));
+      // Check if word is physically overlapping a zone even if pointer isn't
+      // This helps with "missed" glitches on fast movements
+      let overlapZone: Artikel | null = null;
+      const wordElement = document.querySelector(`[key="${wordKey}"]`) || document.querySelector('.word-card')?.parentElement;
+      
+      if (wordElement) {
+        const wordRect = wordElement.getBoundingClientRect();
+        const wordCenterX = wordRect.left + wordRect.width / 2;
+        const wordCenterY = wordRect.top + wordRect.height / 2;
+
+        ARTICLES.forEach((artikel) => {
+          const zoneElement = document.getElementById(`zone-${artikel}`);
+          if (zoneElement) {
+            const rect = zoneElement.getBoundingClientRect();
+            // Larger detection area for the word itself
+            if (
+              wordCenterX >= rect.left - 20 &&
+              wordCenterX <= rect.right + 20 &&
+              wordCenterY >= rect.top - 20 &&
+              wordCenterY <= rect.bottom + 20
+            ) {
+              overlapZone = artikel;
+            }
+          }
+        });
+      }
+
+      if (overlapZone) {
+        const isCorrect = overlapZone === wordSnapshot.artikel;
+        if (isCorrect) {
+          handleCorrect(overlapZone);
+        } else {
+          handleIncorrect(overlapZone, wordSnapshot);
+        }
+      } else {
+        setGameState((prev) => ({ ...prev, isDragging: false }));
+      }
     }
   }, [handleCorrect, handleIncorrect]);
 
