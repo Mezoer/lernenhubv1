@@ -83,14 +83,11 @@ export const DraggableWord = ({
       animationRef.current = requestAnimationFrame(animate);
     };
 
-    const startDelay = setTimeout(() => {
-      lastTimeRef.current = performance.now();
-      animationRef.current = requestAnimationFrame(animate);
-    }, 100);
+    lastTimeRef.current = performance.now();
+    animationRef.current = requestAnimationFrame(animate);
 
     return () => {
       mountedRef.current = false;
-      clearTimeout(startDelay);
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
     };
   }, [isPaused, fallSpeed, floorY, applyTransform, onHitFloor]);
@@ -159,15 +156,14 @@ export const DraggableWord = ({
     const el = elRef.current;
     if (!el) return;
     el.style.opacity = '0';
-    el.style.transform = 'translate(-50%, 0) scale(0.8)';
+    el.style.transform = 'translate(-50%, 0) scale(0.95)';
     requestAnimationFrame(() => {
-      el.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+      el.style.transition = 'opacity 0.1s ease, transform 0.1s ease';
       el.style.opacity = '1';
       el.style.transform = 'translate(-50%, 0) scale(1)';
-      // Remove transition after intro so it doesn't interfere with drag
       setTimeout(() => {
         if (el) el.style.transition = 'none';
-      }, 350);
+      }, 120);
     });
   }, []);
 

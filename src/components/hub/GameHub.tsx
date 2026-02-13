@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Layers3, Type, Coffee } from 'lucide-react';
+import { Layers3, Type, Coffee, MessageCircle } from 'lucide-react';
 
 interface GameHubProps {
   onSelectArtikelDrop: () => void;
@@ -119,16 +119,28 @@ export const GameHub = ({
             <p className="text-xs leading-relaxed mb-3" style={{ color: '#8a969e' }}>
               Donating helps me cover domain hosting costs and ensures the game stays free of ads and in-game purchases.
             </p>
-            <a href="https://ko-fi.com/mezohehe" target="_blank" rel="noopener noreferrer">
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-gradient-to-r from-accent to-primary text-primary-foreground font-semibold text-sm"
-              >
-                <Coffee className="w-4 h-4" />
-                Support on Ko-fi
-              </motion.button>
-            </a>
+            <div className="flex gap-3">
+              <a href="https://ko-fi.com/mezohehe" target="_blank" rel="noopener noreferrer" className="flex-1">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="w-full flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-gradient-to-r from-accent to-primary text-primary-foreground font-semibold text-sm"
+                >
+                  <Coffee className="w-4 h-4" />
+                  Support on Ko-fi
+                </motion.button>
+              </a>
+              <a href="https://discord.gg/EX4bAGKa" target="_blank" rel="noopener noreferrer" className="flex-1">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="w-full flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-[#5865F2] text-white font-semibold text-sm"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  Join Discord
+                </motion.button>
+              </a>
+            </div>
           </div>
         </div>
       </motion.div>
