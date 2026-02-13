@@ -7,7 +7,6 @@ channel = "stable-25_05"
 
 [deployment]
 deploymentTarget = "static"
-run = ["node", "./dist/index.cjs"]
 build = ["npm", "run", "build"]
 publicDir = "dist"
 
