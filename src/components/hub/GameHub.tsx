@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Layers3, Type, Coffee, MessageCircle } from 'lucide-react';
+import { Layers3, Type, Coffee, MessageCircle, Play } from 'lucide-react';
 
 interface GameHubProps {
   onSelectArtikelDrop: () => void;
@@ -63,6 +63,10 @@ export const GameHub = ({
             </p>
           </div>
           <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-[hsl(var(--der-color))] via-[hsl(var(--das-color))] to-[hsl(var(--die-color))] opacity-70" />
+          <div className="absolute bottom-4 right-4 md:bottom-5 md:right-5 z-10 flex items-center gap-2 px-4 py-2.5 rounded-xl border text-[#fffcf5] font-semibold text-sm high-contrast-play play-btn-glow play-btn-article bg-gradient-to-r from-[hsl(var(--der-color))]/25 via-[hsl(var(--das-color))]/25 to-[hsl(var(--die-color))]/25 border-[hsl(var(--der-color))]/50">
+            <Play className="w-5 h-5 fill-current" />
+            <span>Play →</span>
+          </div>
         </motion.button>
 
         {/* Satz-Splitter Card */}
@@ -85,7 +89,7 @@ export const GameHub = ({
               <Type className="w-8 h-8 text-white" />
             </div>
           </div>
-          <div className="relative z-10">
+          <div className="relative z-10 pb-14 md:pb-16">
             <h2 className="text-2xl md:text-3xl font-bold mb-3 font-['JetBrains_Mono']">
               <span className="bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent">
                 Satz-Splitter
@@ -96,15 +100,19 @@ export const GameHub = ({
             </p>
           </div>
           <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-accent to-primary opacity-70" />
+          <div className="absolute bottom-4 right-4 md:bottom-5 md:right-5 z-10 flex items-center gap-2 px-4 py-2.5 rounded-xl border text-[#fffcf5] font-semibold text-sm high-contrast-play play-btn-glow play-btn-satz bg-gradient-to-r from-accent/30 to-primary/30 border-accent/50">
+            <Play className="w-5 h-5 fill-current" />
+            <span>Play →</span>
+          </div>
         </motion.button>
       </div>
 
-      {/* Story Section — lighter, secondary */}
+      {/* Story Section — narrower than game cards, ~60% viewport */}
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.4 }}
-        className="mt-24 max-w-2xl w-full"
+        className="mt-24 w-full max-w-[60vw] story-card-container"
       >
         <div className="rounded-2xl p-6 md:p-8 border border-border/30 bg-secondary/20">
           <h3 className="text-base md:text-lg font-semibold mb-3 font-['JetBrains_Mono'] bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent">

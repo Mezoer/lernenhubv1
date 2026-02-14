@@ -87,13 +87,7 @@ export const SatzGameStats = ({
 
         {/* Stats */}
         <div className="flex items-center gap-4">
-          <motion.div
-            key={score}
-            initial={{ scale: 1 }}
-            animate={{ scale: [1, 1.15, 1] }}
-            transition={{ duration: 0.2 }}
-            className="stat-badge"
-          >
+          <motion.div key={score} className="stat-badge score-bounce">
             <span className="text-primary font-bold">{score}</span>
           </motion.div>
 
@@ -228,12 +222,7 @@ export const SatzGameStats = ({
           <div className="w-px h-5 bg-border/50" />
 
           {/* Score */}
-          <motion.div
-            key={score}
-            initial={{ scale: 1.15 }}
-            animate={{ scale: 1 }}
-            className="shrink-0"
-          >
+          <motion.div key={score} className="shrink-0 score-bounce">
             <span className="font-bold text-primary text-sm">{score}</span>
           </motion.div>
 

@@ -210,4 +210,174 @@
     0%, 100% { box-shadow: none; }
     50% { box-shadow: 0 0 40px 10px hsl(var(--error-glow)); }
   }
+
+  /* Artikel-Drop wrong-answer explosion (60 FPS, GPU-friendly) */
+  @keyframes wrong-word-scale-fade {
+    0% { transform: translate(-50%, -50%) scale(1); opacity: 1; color: inherit; }
+    25% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; color: hsl(0 85% 55%); }
+    50% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.9; color: hsl(0 85% 55%); }
+    100% { transform: translate(-50%, -50%) scale(1.25); opacity: 0; color: hsl(0 85% 55%); }
+  }
+
+  @keyframes wrong-particle-fly {
+    0% {
+      transform: translate(-50%, -50%) translate(0, 0) scale(1);
+      opacity: 1;
+    }
+    100% {
+      transform: translate(-50%, -50%) translate(var(--px), var(--py)) scale(0.3);
+      opacity: 0;
+    }
+  }
+
+  .wrong-word-shatter {
+    animation: wrong-word-scale-fade 0.45s ease-out forwards;
+    pointer-events: none;
+  }
+
+  .wrong-particle {
+    animation: wrong-particle-fly 0.5s ease-out forwards;
+    pointer-events: none;
+  }
+
+  /* Screen shake on wrong drop */
+  @keyframes screen-shake {
+    0%, 100% { transform: translate(0, 0); }
+    10% { transform: translate(-4px, -2px); }
+    20% { transform: translate(4px, 2px); }
+    30% { transform: translate(-3px, 2px); }
+    40% { transform: translate(3px, -2px); }
+    50% { transform: translate(-2px, 1px); }
+    60% { transform: translate(2px, -1px); }
+    70% { transform: translate(-1px, 0); }
+    80% { transform: translate(1px, 0); }
+    90% { transform: translate(-1px, 0); }
+  }
+
+  .screen-shake-active {
+    animation: screen-shake 0.2s ease-out;
+  }
+
+  /* Bucket jolt when wrong word dropped */
+  @keyframes bucket-jolt {
+    0%, 100% { transform: scale(1) translate(0, 0); }
+    15% { transform: scale(1.02) translate(-3px, 0); }
+    30% { transform: scale(1.02) translate(3px, 0); }
+    45% { transform: scale(1.01) translate(-2px, 0); }
+    60% { transform: scale(1.01) translate(2px, 0); }
+    75% { transform: scale(1.005) translate(-1px, 0); }
+  }
+
+  .bucket-jolt-active {
+    animation: bucket-jolt 0.2s ease-out;
+  }
+
+  /* Red radial splash overlay (center pulse, 0.3s) */
+  @keyframes splash-overlay-pulse {
+    0% { opacity: 0; transform: scale(0.8); }
+    40% { opacity: 0.6; transform: scale(1.1); }
+    100% { opacity: 0; transform: scale(1.3); }
+  }
+
+  .splash-overlay-active {
+    animation: splash-overlay-pulse 0.3s ease-out forwards;
+    pointer-events: none;
+  }
+
+  /* Artikel-Drop: correct bucket pulse (theme glow) */
+  @keyframes bucket-pulse-correct {
+    0%, 100% { box-shadow: none; }
+    30% { box-shadow: 0 0 30px 8px var(--bucket-glow); }
+    60% { box-shadow: 0 0 20px 4px var(--bucket-glow); }
+  }
+
+  .bucket-pulse-correct {
+    animation: bucket-pulse-correct 0.5s ease-out;
+  }
+
+  /* Correct answer: golden/white sparkles float upward */
+  @keyframes correct-word-fade {
+    0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+    40% { transform: translate(-50%, -50%) scale(1.1); opacity: 0.9; }
+    100% { transform: translate(-50%, -50%) scale(1.05); opacity: 0; }
+  }
+
+  @keyframes correct-particle-up {
+    0% {
+      transform: translate(-50%, -50%) translate(0, 0) scale(1);
+      opacity: 1;
+    }
+    100% {
+      transform: translate(-50%, -50%) translate(var(--cx), var(--cy)) scale(0.2);
+      opacity: 0;
+    }
+  }
+
+  .correct-word-fade {
+    animation: correct-word-fade 0.4s ease-out forwards;
+    pointer-events: none;
+  }
+
+  .correct-particle-up {
+    animation: correct-particle-up 0.5s ease-out forwards;
+    pointer-events: none;
+  }
+
+  /* Score bounce in HUD */
+  .score-bounce {
+    animation: score-bounce 0.45s ease-out;
+  }
+
+  @keyframes score-bounce {
+    0%, 100% { transform: scale(1); }
+    35% { transform: scale(1.25); }
+    55% { transform: scale(0.95); }
+    75% { transform: scale(1.08); }
+  }
+
+  /* Satz-Splitter: correct slot green glow pulse */
+  @keyframes slot-glow-pulse {
+    0%, 100% { box-shadow: none; }
+    40% { box-shadow: 0 0 20px 6px hsl(var(--success-glow) / 0.8); }
+    70% { box-shadow: 0 0 12px 3px hsl(var(--success-glow) / 0.5); }
+  }
+
+  .slot-glow-pulse {
+    animation: slot-glow-pulse 0.5s ease-out;
+  }
+
+  /* Hub: Story card width + Play button (grandma-proofing) */
+  .story-card-container {
+    max-width: min(60vw, 640px);
+  }
+
+  @media (max-width: 768px) {
+    .story-card-container {
+      max-width: 100%;
+    }
+  }
+
+  .high-contrast-play {
+    box-shadow: 0 0 0 2px hsl(var(--primary) / 0.3);
+    transition: box-shadow 0.2s ease, filter 0.2s ease;
+  }
+
+  .group:hover .play-btn-glow {
+    filter: brightness(1.15);
+  }
+
+  .group:hover .play-btn-article.play-btn-glow {
+    box-shadow: 0 0 24px hsl(var(--der-color) / 0.45), 0 0 0 2px hsl(var(--der-color) / 0.5);
+  }
+
+  .group:hover .play-btn-satz.play-btn-glow {
+    box-shadow: 0 0 24px hsl(var(--primary) / 0.5), 0 0 0 2px hsl(var(--primary) / 0.5);
+  }
+
+  @media (max-width: 640px) {
+    .high-contrast-play {
+      padding: 0.5rem 0.75rem;
+      font-size: 0.8125rem;
+    }
+  }
 }

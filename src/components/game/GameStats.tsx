@@ -46,9 +46,7 @@ export const GameStats = ({ level, score, lives, streak, isPaused, onBack, onTog
         <div className="flex items-center gap-4">
           <motion.div
             key={score}
-            initial={{ scale: 1.2 }}
-            animate={{ scale: 1 }}
-            className="stat-badge flex items-center gap-2"
+            className="stat-badge flex items-center gap-2 score-bounce"
           >
             <Trophy className="w-4 h-4 text-primary" />
             <span className="font-bold">{score}</span>
@@ -188,9 +186,7 @@ export const GameStats = ({ level, score, lives, streak, isPaused, onBack, onTog
           {/* Score */}
           <motion.div
             key={score}
-            initial={{ scale: 1.15 }}
-            animate={{ scale: 1 }}
-            className="flex items-center gap-1.5 shrink-0"
+            className="flex items-center gap-1.5 shrink-0 score-bounce"
           >
             <Trophy className="w-4 h-4 text-primary" />
             <span className="font-bold text-foreground text-sm">{score}</span>
