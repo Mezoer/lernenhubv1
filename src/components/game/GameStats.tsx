@@ -27,85 +27,109 @@ export const GameStats = ({ level, score, lives, streak, isPaused, onBack, onTog
       animate={{ opacity: 1, y: 0 }}
       className="select-none"
     >
-      {/* Desktop layout - unchanged */}
-      <div className="hidden md:flex items-center justify-between p-4 bg-card/50 backdrop-blur-sm border-b border-border">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={onBack}
-            className="p-2 rounded-lg hover:bg-secondary transition-colors"
-            aria-label="Back to menu"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <div className="stat-badge">
-            <span className="text-sm text-muted-foreground">Level:</span>{' '}
+      {/* Desktop / iPad consolidated HUD */}
+      <div className="hidden md:block px-4 pt-4 pb-3 bg-card/50 backdrop-blur-sm border-b border-border">
+        <div className="flex items-center justify-between rounded-2xl bg-secondary/60 border border-border/50 px-5 py-3">
+          {/* Back + Level */}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={onBack}
+              className="p-2 rounded-lg hover:bg-background/50 transition-colors"
+              aria-label="Back to menu"
+            >
+              <ArrowLeft className="w-5 h-5 text-foreground" />
+            </button>
+            <div className="w-px h-6 bg-border/50" />
+            <span className="text-sm text-muted-foreground">Level</span>
             <span className="font-bold text-primary">{level}</span>
           </div>
-        </div>
 
-        <div className="flex items-center gap-4">
-          <motion.div
-            key={score}
-            initial={{ scale: 1.2 }}
-            animate={{ scale: 1 }}
-            className="stat-badge flex items-center gap-2"
-          >
-            <Trophy className="w-4 h-4 text-primary" />
-            <span className="font-bold">{score}</span>
-          </motion.div>
+          {/* Center stats */}
+          <div className="flex items-center gap-6">
+            {/* Lives */}
+            <div className="flex items-center gap-1.5">
+              {[...Array(3)].map((_, i) => {
+                const isActive = i < lives;
+                const isBreaking = justLostLife && i === lives;
+                return (
+                  <motion.div
+                    key={i}
+                    initial={false}
+                    animate={
+                      isBreaking
+                        ? { scale: [1, 1.4, 0], rotate: [0, -15, 15, 0], opacity: [1, 1, 0] }
+                        : { scale: isActive ? 1 : 0.7, opacity: isActive ? 1 : 0.2 }
+                    }
+                    transition={
+                      isBreaking
+                        ? { duration: 0.4, ease: 'easeOut' }
+                        : { type: 'spring', stiffness: 500, damping: 25 }
+                    }
+                  >
+                    <Heart
+                      className={`w-6 h-6 transition-colors ${
+                        isActive
+                          ? 'text-destructive fill-destructive drop-shadow-[0_0_8px_hsl(var(--destructive)/0.6)]'
+                          : 'text-muted-foreground/40'
+                      }`}
+                    />
+                  </motion.div>
+                );
+              })}
+            </div>
 
-          <AnimatePresence>
-            {streak > 1 && (
-              <motion.div
-                initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0, opacity: 0 }}
-                className="stat-badge flex items-center gap-2 bg-primary/20"
-              >
-                <Target className="w-4 h-4 text-primary" />
-                <span className="font-bold text-primary">{streak}x</span>
-              </motion.div>
-            )}
-          </AnimatePresence>
+            <div className="w-px h-6 bg-border/50" />
 
+            {/* Streak - always reserves space */}
+            <div className="flex items-center gap-1.5 min-w-[56px] justify-center">
+              <AnimatePresence mode="wait">
+                {streak > 1 ? (
+                  <motion.div
+                    key="streak-active"
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0, opacity: 0 }}
+                    className="flex items-center gap-1.5"
+                  >
+                    <Target className="w-5 h-5 text-primary" />
+                    <span className="font-bold text-primary">{streak}x</span>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="streak-empty"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 0.35 }}
+                    className="flex items-center gap-1.5"
+                  >
+                    <Target className="w-5 h-5 text-muted-foreground" />
+                    <span className="font-medium text-muted-foreground">--</span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            <div className="w-px h-6 bg-border/50" />
+
+            {/* Score */}
+            <motion.div
+              key={score}
+              initial={{ scale: 1.2 }}
+              animate={{ scale: 1 }}
+              className="flex items-center gap-2"
+            >
+              <Trophy className="w-5 h-5 text-primary" />
+              <span className="font-bold text-foreground">{score}</span>
+            </motion.div>
+          </div>
+
+          {/* Pause */}
           <button
             onClick={onTogglePause}
-            className="p-2 rounded-lg hover:bg-secondary transition-colors"
+            className="p-2 rounded-lg hover:bg-background/50 transition-colors"
             aria-label={isPaused ? 'Resume' : 'Pause'}
           >
             {isPaused ? <Play className="w-5 h-5" /> : <Pause className="w-5 h-5" />}
           </button>
-
-          <div className="flex items-center gap-1">
-            {[...Array(3)].map((_, i) => {
-              const isActive = i < lives;
-              const isBreaking = justLostLife && i === lives;
-              return (
-                <motion.div
-                  key={i}
-                  initial={false}
-                  animate={
-                    isBreaking
-                      ? { scale: [1, 1.4, 0], rotate: [0, -15, 15, 0], opacity: [1, 1, 0] }
-                      : { scale: isActive ? 1 : 0.7, opacity: isActive ? 1 : 0.2 }
-                  }
-                  transition={
-                    isBreaking
-                      ? { duration: 0.4, ease: 'easeOut' }
-                      : { type: 'spring', stiffness: 500, damping: 25 }
-                  }
-                >
-                  <Heart
-                    className={`w-6 h-6 transition-colors ${
-                      isActive
-                        ? 'text-destructive fill-destructive drop-shadow-[0_0_8px_hsl(var(--destructive)/0.6)]'
-                        : 'text-muted-foreground/40'
-                    }`}
-                  />
-                </motion.div>
-              );
-            })}
-          </div>
         </div>
       </div>
 
