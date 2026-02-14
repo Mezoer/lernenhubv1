@@ -5,6 +5,7 @@ interface ArticleZoneProps {
   artikel: Artikel;
   isActive: boolean;
   isCorrect: boolean | null;
+  jolt?: boolean;
 }
 
 const articleStyles: Record<Artikel, { zone: string; text: string; glowColor: string }> = {
@@ -25,7 +26,7 @@ const articleStyles: Record<Artikel, { zone: string; text: string; glowColor: st
   },
 };
 
-export const ArticleZone = ({ artikel, isActive, isCorrect }: ArticleZoneProps) => {
+export const ArticleZone = ({ artikel, isActive, isCorrect, jolt = false }: ArticleZoneProps) => {
   const styles = articleStyles[artikel];
 
   return (
@@ -33,12 +34,19 @@ export const ArticleZone = ({ artikel, isActive, isCorrect }: ArticleZoneProps) 
       className={`
         article-zone ${styles.zone}
         ${isActive ? 'article-zone-active' : ''}
+        ${jolt ? 'bucket-jolt-active' : ''}
+        ${isCorrect === true ? 'bucket-pulse-correct' : ''}
         flex-1 min-h-[120px] md:min-h-[140px] relative overflow-hidden
       `}
+      style={
+        isCorrect === true
+          ? ({ '--bucket-glow': styles.glowColor } as React.CSSProperties)
+          : undefined
+      }
       animate={isActive ? { scale: 1.05 } : { scale: 1 }}
       transition={{ type: 'spring', stiffness: 400, damping: 25 }}
     >
-      {/* Correct answer ripple effect */}
+      {/* Correct answer ripple effect (theme glow) */}
       <AnimatePresence>
         {isCorrect === true && (
           <motion.div

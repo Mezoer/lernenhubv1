@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
+import { flushSync } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { v4 as uuidv4 } from 'uuid';
 import { Level, Artikel, Word, getRandomWord, LEVEL_INFO } from '@/data/wordDatabase';
@@ -6,6 +7,9 @@ import { DraggableWord } from './DraggableWord';
 import { ArticleZone } from './ArticleZone';
 import { GameStats } from './GameStats';
 import { GameOver } from './GameOver';
+import { WrongAnswerExplosion } from './WrongAnswerExplosion';
+import { CorrectAnswerCelebration } from './CorrectAnswerCelebration';
+import { useSound } from '@/hooks/useSound';
 
 interface GameArenaProps {
   level: Level;
@@ -15,6 +19,19 @@ interface GameArenaProps {
 interface FailedWord {
   word: Word;
   selectedArtikel: string | null;
+}
+
+interface ExplodingWord {
+  word: Word;
+  wrongArtikel: Artikel;
+  centerX: number;
+  centerY: number;
+}
+
+interface CelebratingWord {
+  word: string;
+  centerX: number;
+  centerY: number;
 }
 
 interface GameState {
@@ -30,6 +47,9 @@ interface GameState {
   zoneResult: { zone: Artikel; correct: boolean } | null;
   showScreenFlash: 'correct' | 'incorrect' | null;
   failedWords: FailedWord[];
+  explodingWord: ExplodingWord | null;
+  celebratingWord: CelebratingWord | null;
+  screenShake: boolean;
 }
 
 const ARTICLES: Artikel[] = ['der', 'das', 'die'] as const; // das in middle as neutral
@@ -38,7 +58,8 @@ export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const zonesRef = useRef<Map<Artikel, DOMRect>>(new Map());
   const [containerHeight, setContainerHeight] = useState(600);
-  
+  const { playDing, playWrong } = useSound();
+
   const [highScore, setHighScore] = useState(() => {
     const saved = localStorage.getItem(`artikeldrop-highscore-${level}`);
     return saved ? parseInt(saved, 10) : 0;
@@ -57,6 +78,9 @@ export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
     zoneResult: null,
     showScreenFlash: null,
     failedWords: [],
+    explodingWord: null,
+    celebratingWord: null,
+    screenShake: false,
   }));
 
   const fallSpeed = LEVEL_INFO[level].speed;
@@ -106,74 +130,101 @@ export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
     }));
   }, [level]);
 
-  // Handle correct answer
-  const handleCorrect = useCallback((artikel: Artikel) => {
-    setGameState((prev) => {
-      const newScore = prev.score + 10 * (prev.streak + 1);
-      const newStreak = prev.streak + 1;
-      
-      // Save high score
-      if (newScore > highScore) {
-        localStorage.setItem(`artikeldrop-highscore-${level}`, newScore.toString());
-        setHighScore(newScore);
-      }
+  // Handle correct answer (dropPosition for confetti burst). flushSync so feedback is instant (no lag).
+  const handleCorrect = useCallback((
+    artikel: Artikel,
+    dropPosition?: { centerX: number; centerY: number }
+  ) => {
+    playDing();
 
-      return {
-        ...prev,
-        score: newScore,
-        streak: newStreak,
-        currentWord: null,
-        zoneResult: { zone: artikel, correct: true },
-        showScreenFlash: 'correct',
-      };
+    flushSync(() => {
+      setGameState((prev) => {
+        const newScore = prev.score + 10 * (prev.streak + 1);
+        const newStreak = prev.streak + 1;
+
+        if (newScore > highScore) {
+          localStorage.setItem(`artikeldrop-highscore-${level}`, newScore.toString());
+          setHighScore(newScore);
+        }
+
+        return {
+          ...prev,
+          score: newScore,
+          streak: newStreak,
+          currentWord: null,
+          zoneResult: { zone: artikel, correct: true },
+          showScreenFlash: 'correct',
+          celebratingWord: dropPosition
+            ? { word: prev.currentWord?.word ?? '', centerX: dropPosition.centerX, centerY: dropPosition.centerY }
+            : null,
+        };
+      });
     });
 
-    // Clear flash effect
+    setTimeout(() => setGameState((prev) => ({ ...prev, showScreenFlash: null })), 300);
+    setTimeout(() => {
+      setGameState((prev) => ({
+        ...prev,
+        celebratingWord: null,
+        currentWord: getRandomWord(level),
+        wordKey: uuidv4(),
+        zoneResult: null,
+      }));
+    }, 550);
+  }, [highScore, level, playDing]);
+
+  // Handle incorrect answer (dropPosition only when dropped in wrong bucket). flushSync so feedback is instant.
+  const handleIncorrect = useCallback((
+    artikel: Artikel,
+    wordSnapshot: Word,
+    dropPosition?: { centerX: number; centerY: number }
+  ) => {
+    flushSync(() => {
+      setGameState((prev) => {
+        const newLives = prev.lives - 1;
+        const newFailedWords = [...prev.failedWords, { word: wordSnapshot, selectedArtikel: artikel }];
+        return {
+          ...prev,
+          lives: newLives,
+          streak: 0,
+          currentWord: null,
+          zoneResult: { zone: artikel, correct: false },
+          showScreenFlash: 'incorrect',
+          isGameOver: newLives <= 0,
+          failedWords: newFailedWords,
+          explodingWord: dropPosition
+            ? { word: wordSnapshot, wrongArtikel: artikel, centerX: dropPosition.centerX, centerY: dropPosition.centerY }
+            : null,
+          screenShake: !!dropPosition,
+        };
+      });
+    });
+
+    // Clear splash overlay after 0.3s
     setTimeout(() => {
       setGameState((prev) => ({ ...prev, showScreenFlash: null }));
     }, 300);
 
-    // Spawn new word after animation
-    setTimeout(spawnNewWord, 500);
-  }, [highScore, level, spawnNewWord]);
-
-  // Handle incorrect answer
-  const handleIncorrect = useCallback((artikel: Artikel, wordSnapshot: Word) => {
-    setGameState((prev) => {
-      const newLives = prev.lives - 1;
-      const newFailedWords = [...prev.failedWords, { word: wordSnapshot, selectedArtikel: artikel }];
-      
-      return {
-        ...prev,
-        lives: newLives,
-        streak: 0,
-        currentWord: null,
-        zoneResult: { zone: artikel, correct: false },
-        showScreenFlash: 'incorrect',
-        isGameOver: newLives <= 0,
-        failedWords: newFailedWords,
-      };
-    });
-
-    // Clear flash effect
+    // Clear screen shake after 200ms
     setTimeout(() => {
-      setGameState((prev) => ({ ...prev, showScreenFlash: null }));
-    }, 400);
+      setGameState((prev) => ({ ...prev, screenShake: false }));
+    }, 200);
 
-    // Spawn new word if not game over
+    // Clear explosion and spawn next word after shatter animation
     setTimeout(() => {
       setGameState((prev) => {
         if (!prev.isGameOver) {
           return {
             ...prev,
+            explodingWord: null,
             currentWord: getRandomWord(level),
             wordKey: uuidv4(),
             zoneResult: null,
           };
         }
-        return prev;
+        return { ...prev, explodingWord: null, zoneResult: null };
       });
-    }, 600);
+    }, 650);
   }, [level]);
 
   // Handle floor hit (word missed)
@@ -246,10 +297,24 @@ export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
 
     if (droppedInZone) {
       const isCorrect = droppedInZone === wordSnapshot.artikel;
+      const wordEl = document.querySelector('.word-card')?.parentElement as HTMLElement | null;
+      const containerEl = containerRef.current;
+      const dropPos =
+        wordEl && containerEl
+          ? (() => {
+              const wr = wordEl.getBoundingClientRect();
+              const cr = containerEl.getBoundingClientRect();
+              return {
+                centerX: wr.left - cr.left + wr.width / 2,
+                centerY: wr.top - cr.top + wr.height / 2,
+              };
+            })()
+          : undefined;
       if (isCorrect) {
-        handleCorrect(droppedInZone);
+        handleCorrect(droppedInZone, dropPos);
       } else {
-        handleIncorrect(droppedInZone, wordSnapshot);
+        handleIncorrect(droppedInZone, wordSnapshot, dropPos);
+        playWrong();
       }
     } else {
       // Check if word is physically overlapping a zone even if pointer isn't
@@ -281,16 +346,30 @@ export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
 
       if (overlapZone) {
         const isCorrect = overlapZone === wordSnapshot.artikel;
+        const wordEl = document.querySelector('.word-card')?.parentElement as HTMLElement | null;
+        const containerEl = containerRef.current;
+        const overlapPos =
+          wordEl && containerEl
+            ? (() => {
+                const wr = wordEl.getBoundingClientRect();
+                const cr = containerEl.getBoundingClientRect();
+                return {
+                  centerX: wr.left - cr.left + wr.width / 2,
+                  centerY: wr.top - cr.top + wr.height / 2,
+                };
+              })()
+            : undefined;
         if (isCorrect) {
-          handleCorrect(overlapZone);
+          handleCorrect(overlapZone, overlapPos);
         } else {
-          handleIncorrect(overlapZone, wordSnapshot);
+          handleIncorrect(overlapZone, wordSnapshot, overlapPos);
+          playWrong();
         }
       } else {
         setGameState((prev) => ({ ...prev, isDragging: false }));
       }
     }
-  }, [handleCorrect, handleIncorrect]);
+  }, [handleCorrect, handleIncorrect, playWrong]);
 
   // Restart game
   const handleRestart = useCallback(() => {
@@ -307,21 +386,33 @@ export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
       zoneResult: null,
       showScreenFlash: null,
       failedWords: [],
+      explodingWord: null,
+      celebratingWord: null,
+      screenShake: false,
     });
   }, [level]);
 
   return (
-    <div className="h-screen flex flex-col bg-[image:var(--gradient-game-bg)] relative select-none">
-      {/* Screen flash effects */}
+    <div
+      className={`h-screen flex flex-col bg-[image:var(--gradient-game-bg)] relative select-none ${gameState.screenShake ? 'screen-shake-active' : ''}`}
+    >
+      {/* Red radial splash overlay (center pulse, 0.3s) */}
       <AnimatePresence>
         {gameState.showScreenFlash === 'incorrect' && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className="absolute inset-0 z-50 pointer-events-none bg-destructive/20"
-          />
+            transition={{ duration: 0.01 }}
+            className="absolute inset-0 z-50 pointer-events-none flex items-center justify-center"
+          >
+            <div
+              className="splash-overlay-active w-[min(120vmax,800px)] h-[min(120vmax,800px)] rounded-full"
+              style={{
+                background: 'radial-gradient(circle, hsl(0 85% 55% / 0.5) 0%, hsl(0 75% 55% / 0.2) 40%, transparent 70%)',
+              }}
+            />
+          </motion.div>
         )}
         {gameState.showScreenFlash === 'correct' && (
           <motion.div
@@ -379,6 +470,24 @@ export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
         ref={containerRef}
         className="flex-1 relative overflow-hidden"
       >
+        {/* Wrong-answer explosion (word shatter + particles) */}
+        {gameState.explodingWord && (
+          <WrongAnswerExplosion
+            word={gameState.explodingWord.word}
+            centerX={gameState.explodingWord.centerX}
+            centerY={gameState.explodingWord.centerY}
+          />
+        )}
+
+        {/* Correct-answer celebration (golden/white sparkles upward) */}
+        {gameState.celebratingWord && gameState.celebratingWord.word && (
+          <CorrectAnswerCelebration
+            word={gameState.celebratingWord.word}
+            centerX={gameState.celebratingWord.centerX}
+            centerY={gameState.celebratingWord.centerY}
+          />
+        )}
+
         {/* Falling Word */}
         <AnimatePresence mode="wait">
           {gameState.currentWord && !gameState.isGameOver && (
@@ -414,6 +523,9 @@ export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
                     gameState.zoneResult?.zone === artikel
                       ? gameState.zoneResult.correct
                       : null
+                  }
+                  jolt={
+                    gameState.zoneResult?.zone === artikel && gameState.zoneResult?.correct === false
                   }
                 />
               </div>

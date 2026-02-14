@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Layers3, Type, Coffee, MessageCircle } from 'lucide-react';
+import { Layers3, Type, Coffee, MessageCircle, Play } from 'lucide-react';
 
 interface GameHubProps {
   onSelectArtikelDrop: () => void;
@@ -27,84 +27,98 @@ export const GameHub = ({
         </p>
       </motion.div>
 
-      {/* Game Cards */}
-      <div className="grid md:grid-cols-2 gap-6 md:gap-8 max-w-5xl w-full">
+      {/* Game Cards — equal height, aligned icons and titles */}
+      <div className="grid md:grid-cols-2 gap-6 md:gap-8 max-w-5xl w-full md:items-stretch">
         {/* Artikel-Drop Card */}
         <motion.button
+          type="button"
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
           whileHover={{ scale: 1.03, y: -4 }}
           whileTap={{ scale: 0.98 }}
           onClick={onSelectArtikelDrop}
-          className="group relative overflow-hidden rounded-3xl p-10 md:p-12 text-left"
+          className="group relative overflow-hidden rounded-3xl p-10 md:p-12 text-left flex flex-col h-full min-h-0"
           style={{
             background: 'var(--gradient-card)',
             boxShadow: 'var(--shadow-lg)',
             transition: 'box-shadow 0.2s ease-in-out',
           }}
         >
-          <div className="relative z-10 mb-6">
-            <div className="w-16 h-16 rounded-2xl flex items-center justify-center bg-gradient-to-br from-[hsl(var(--der-color))] via-[hsl(var(--das-color))] to-[hsl(var(--die-color))]">
-              <Layers3 className="w-8 h-8 text-white" />
+          <div className="flex flex-col flex-1 min-h-0">
+            <div className="relative z-10 mb-6 flex-shrink-0">
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center bg-gradient-to-br from-[hsl(var(--der-color))] via-[hsl(var(--das-color))] to-[hsl(var(--die-color))]">
+                <Layers3 className="w-8 h-8 text-white" />
+              </div>
+            </div>
+            <div className="relative z-10 flex flex-col flex-1 min-h-0">
+              <h2 className="text-2xl md:text-3xl font-bold mb-3 font-['JetBrains_Mono'] flex-shrink-0">
+                <span className="bg-gradient-to-r from-[hsl(var(--der-color))] via-[hsl(var(--das-color))] to-[hsl(var(--die-color))] bg-clip-text text-transparent">
+                  Artikel-Drop
+                </span>
+              </h2>
+              <p className="text-sm md:text-base leading-relaxed text-[#fffcf5] flex-1 min-h-0">
+                Catch falling words and sort them by their German article:{' '}
+                <span className="text-[hsl(var(--der-color))] font-semibold">der</span>,{' '}
+                <span className="text-[hsl(var(--das-color))] font-semibold">das</span>, or{' '}
+                <span className="text-[hsl(var(--die-color))] font-semibold">die</span>. Train your instinct for German noun genders!
+              </p>
             </div>
           </div>
-          <div className="relative z-10">
-            <h2 className="text-2xl md:text-3xl font-bold mb-3 font-['JetBrains_Mono']">
-              <span className="bg-gradient-to-r from-[hsl(var(--der-color))] via-[hsl(var(--das-color))] to-[hsl(var(--die-color))] bg-clip-text text-transparent">
-                Artikel-Drop
-              </span>
-            </h2>
-            <p className="text-sm md:text-base leading-relaxed text-[#fffcf5]">
-              Catch falling words and sort them by their German article:{' '}
-              <span className="text-[hsl(var(--der-color))] font-semibold">der</span>,{' '}
-              <span className="text-[hsl(var(--das-color))] font-semibold">das</span>, or{' '}
-              <span className="text-[hsl(var(--die-color))] font-semibold">die</span>. Train your instinct for German noun genders!
-            </p>
-          </div>
           <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-[hsl(var(--der-color))] via-[hsl(var(--das-color))] to-[hsl(var(--die-color))] opacity-70" />
+          <div className="absolute bottom-4 right-4 md:bottom-5 md:right-5 z-10 flex items-center gap-2 px-4 py-2.5 rounded-xl border text-[#fffcf5] font-semibold text-sm high-contrast-play play-btn-article bg-gradient-to-r from-[hsl(var(--der-color))]/25 via-[hsl(var(--das-color))]/25 to-[hsl(var(--die-color))]/25 border-[hsl(var(--der-color))]/50">
+            <Play className="w-5 h-5 fill-current" />
+            <span>Play →</span>
+          </div>
         </motion.button>
 
         {/* Satz-Splitter Card */}
         <motion.button
+          type="button"
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
           whileHover={{ scale: 1.03, y: -4 }}
           whileTap={{ scale: 0.98 }}
           onClick={onSelectSatzSplitter}
-          className="group relative overflow-hidden rounded-3xl p-10 md:p-12 text-left"
+          className="group relative overflow-hidden rounded-3xl p-10 md:p-12 text-left flex flex-col h-full min-h-0"
           style={{
             background: 'var(--gradient-card)',
             boxShadow: 'var(--shadow-lg)',
             transition: 'box-shadow 0.2s ease-in-out',
           }}
         >
-          <div className="relative z-10 mb-6">
-            <div className="w-16 h-16 rounded-2xl flex items-center justify-center bg-gradient-to-br from-accent to-primary">
-              <Type className="w-8 h-8 text-white" />
+          <div className="flex flex-col flex-1 min-h-0">
+            <div className="relative z-10 mb-6 flex-shrink-0">
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center bg-gradient-to-br from-accent to-primary">
+                <Type className="w-8 h-8 text-white" />
+              </div>
+            </div>
+            <div className="relative z-10 flex flex-col flex-1 min-h-0">
+              <h2 className="text-2xl md:text-3xl font-bold mb-3 font-['JetBrains_Mono'] flex-shrink-0">
+                <span className="bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent">
+                  Satz-Splitter
+                </span>
+              </h2>
+              <p className="text-sm md:text-base leading-relaxed text-[#fffcf5] flex-1 min-h-0">
+                Rebuild German sentences by dragging words into the correct positions. Master German word order!
+              </p>
             </div>
           </div>
-          <div className="relative z-10">
-            <h2 className="text-2xl md:text-3xl font-bold mb-3 font-['JetBrains_Mono']">
-              <span className="bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent">
-                Satz-Splitter
-              </span>
-            </h2>
-            <p className="text-sm md:text-base leading-relaxed text-[#fffcf5]">
-              Rebuild German sentences by dragging words into the correct positions. Master German word order!
-            </p>
-          </div>
           <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-accent to-primary opacity-70" />
+          <div className="absolute bottom-4 right-4 md:bottom-5 md:right-5 z-10 flex items-center gap-2 px-4 py-2.5 rounded-xl border text-[#fffcf5] font-semibold text-sm high-contrast-play play-btn-satz bg-gradient-to-r from-accent/30 to-primary/30 border-accent/50">
+            <Play className="w-5 h-5 fill-current" />
+            <span>Play →</span>
+          </div>
         </motion.button>
       </div>
 
-      {/* Story Section — lighter, secondary */}
+      {/* Story Section — narrower than game cards, ~60% viewport */}
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.4 }}
-        className="mt-24 max-w-2xl w-full"
+        className="mt-24 w-full max-w-[60vw] story-card-container"
       >
         <div className="rounded-2xl p-6 md:p-8 border border-border/30 bg-secondary/20">
           <h3 className="text-base md:text-lg font-semibold mb-3 font-['JetBrains_Mono'] bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent">
