@@ -37,10 +37,11 @@ export const GameHub = ({
           whileHover={{ scale: 1.03, y: -4 }}
           whileTap={{ scale: 0.98 }}
           onClick={onSelectArtikelDrop}
-          className="group relative overflow-hidden rounded-3xl p-10 md:p-12 text-left flex flex-col h-full hover:shadow-[0_0_20px_rgba(var(--der-glow),0.3)] transition-all duration-300"
+          className="group relative overflow-hidden rounded-3xl p-10 md:p-12 text-left flex flex-col h-full transition-shadow duration-150 ease-out hover:shadow-[0_0_25px_rgba(59,130,246,0.4)]"
           style={{
             background: 'var(--gradient-card)',
             boxShadow: 'var(--shadow-lg)',
+            willChange: 'box-shadow'
           }}
         >
           <div className="relative z-10 mb-6">
@@ -61,12 +62,12 @@ export const GameHub = ({
               <span className="text-[hsl(var(--die-color))] font-semibold">die</span>. Train your instinct for German noun genders!
             </p>
           </div>
-          <div className="mt-8 relative z-10 flex items-center gap-2 px-4 py-2.5 rounded-xl border text-[#fffcf5] font-semibold text-sm high-contrast-play play-btn-glow play-btn-article bg-gradient-to-r from-[hsl(var(--der-color))]/25 via-[hsl(var(--das-color))]/25 to-[hsl(var(--die-color))]/25 border-[hsl(var(--der-color))]/50 group-hover:brightness-125 transition-all self-end">
+          <div className="mt-8 relative z-10 flex items-center gap-2 px-4 py-2.5 rounded-xl border text-[#fffcf5] font-semibold text-sm high-contrast-play play-btn-glow play-btn-article bg-gradient-to-r from-[hsl(var(--der-color))]/25 via-[hsl(var(--das-color))]/25 to-[hsl(var(--die-color))]/25 border-[hsl(var(--der-color))]/50 hover:brightness-125 hover:shadow-[0_0_15px_rgba(255,255,255,0.3)] transition-all self-end">
             <Play className="w-5 h-5 fill-current" />
             <span>Play →</span>
           </div>
           <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-[hsl(var(--der-color))] via-[hsl(var(--das-color))] to-[hsl(var(--die-color))] opacity-70" />
-          <div className="absolute inset-0 bg-gradient-to-br from-white/0 to-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+          <div className="absolute inset-0 bg-gradient-to-br from-white/0 to-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none" />
         </motion.button>
 
         {/* Satz-Splitter Card */}
@@ -77,10 +78,11 @@ export const GameHub = ({
           whileHover={{ scale: 1.03, y: -4 }}
           whileTap={{ scale: 0.98 }}
           onClick={onSelectSatzSplitter}
-          className="group relative overflow-hidden rounded-3xl p-10 md:p-12 text-left flex flex-col h-full hover:shadow-[0_0_20px_rgba(var(--accent),0.3)] transition-all duration-300"
+          className="group relative overflow-hidden rounded-3xl p-10 md:p-12 text-left flex flex-col h-full transition-shadow duration-150 ease-out hover:shadow-[0_0_25px_rgba(139,92,246,0.4)]"
           style={{
             background: 'var(--gradient-card)',
             boxShadow: 'var(--shadow-lg)',
+            willChange: 'box-shadow'
           }}
         >
           <div className="relative z-10 mb-6">
@@ -98,12 +100,12 @@ export const GameHub = ({
               Rebuild German sentences by dragging words into the correct positions. Master German word order!
             </p>
           </div>
-          <div className="mt-8 relative z-10 flex items-center gap-2 px-4 py-2.5 rounded-xl border text-[#fffcf5] font-semibold text-sm high-contrast-play play-btn-glow play-btn-satz bg-gradient-to-r from-accent/30 to-primary/30 border-accent/50 group-hover:brightness-125 transition-all self-end">
+          <div className="mt-8 relative z-10 flex items-center gap-2 px-4 py-2.5 rounded-xl border text-[#fffcf5] font-semibold text-sm high-contrast-play play-btn-glow play-btn-satz bg-gradient-to-r from-accent/30 to-primary/30 border-accent/50 hover:brightness-125 hover:shadow-[0_0_15px_rgba(255,255,255,0.3)] transition-all self-end">
             <Play className="w-5 h-5 fill-current" />
             <span>Play →</span>
           </div>
           <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-accent to-primary opacity-70" />
-          <div className="absolute inset-0 bg-gradient-to-br from-white/0 to-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+          <div className="absolute inset-0 bg-gradient-to-br from-white/0 to-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none" />
         </motion.button>
       </div>
 

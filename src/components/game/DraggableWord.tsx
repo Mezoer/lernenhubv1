@@ -68,6 +68,35 @@ export const DraggableWord = ({
 
       posRef.current.y += fallSpeed * 120 * clampedDelta;
 
+      // Anti-Float Logic: Check for zone collision while falling (not dragging)
+      const el = elRef.current;
+      if (el) {
+        const rect = el.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        
+        // Only trigger if we are deep in the bottom area where zones are
+        if (centerY > gameHeight - 180) {
+          const articles: ('der' | 'das' | 'die')[] = ['der', 'das', 'die'];
+          for (const artikel of articles) {
+            const zoneEl = document.getElementById(`zone-${artikel}`);
+            if (zoneEl) {
+              const zoneRect = zoneEl.getBoundingClientRect();
+              if (
+                centerX >= zoneRect.left &&
+                centerX <= zoneRect.right &&
+                centerY >= zoneRect.top &&
+                centerY <= zoneRect.bottom
+              ) {
+                // Word hit a zone while falling!
+                onDragEnd({ x: centerX, y: centerY }, word);
+                return;
+              }
+            }
+          }
+        }
+      }
+
       if (posRef.current.y >= floorY) {
         posRef.current.y = floorY;
         applyTransform();
@@ -132,10 +161,13 @@ export const DraggableWord = ({
       draggingRef.current = false;
       tiltRef.current = 0;
 
-      lastTimeRef.current = performance.now();
-      applyTransform();
-
-      onDragEnd({ x: e.clientX, y: e.clientY }, word);
+      // Seamless handover: Use requestAnimationFrame to ensure the engine updates immediately
+      requestAnimationFrame(() => {
+        if (!mountedRef.current) return;
+        lastTimeRef.current = performance.now();
+        applyTransform();
+        onDragEnd({ x: e.clientX, y: e.clientY }, word);
+      });
     };
 
     el.addEventListener('pointerdown', onDown, { passive: false });
