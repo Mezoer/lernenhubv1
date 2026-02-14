@@ -284,6 +284,69 @@
     pointer-events: none;
   }
 
+  /* Artikel-Drop: correct bucket pulse — theme color (blue der, green das, pink die) */
+  @keyframes bucket-pulse-correct {
+    0%, 100% { box-shadow: none; }
+    25% { box-shadow: 0 0 36px 10px var(--bucket-glow), 0 0 0 2px var(--bucket-glow); }
+    50% { box-shadow: 0 0 28px 6px var(--bucket-glow); }
+    75% { box-shadow: 0 0 16px 3px var(--bucket-glow); }
+  }
+
+  .bucket-pulse-correct {
+    animation: bucket-pulse-correct 0.55s ease-out;
+  }
+
+  /* Correct answer: golden/white sparkles float upward */
+  @keyframes correct-word-fade {
+    0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+    40% { transform: translate(-50%, -50%) scale(1.1); opacity: 0.9; }
+    100% { transform: translate(-50%, -50%) scale(1.05); opacity: 0; }
+  }
+
+  @keyframes correct-particle-up {
+    0% {
+      transform: translate(-50%, -50%) translate(0, 0) scale(1);
+      opacity: 1;
+    }
+    100% {
+      transform: translate(-50%, -50%) translate(var(--cx), var(--cy)) scale(0.2);
+      opacity: 0;
+    }
+  }
+
+  .correct-word-fade {
+    animation: correct-word-fade 0.4s ease-out forwards;
+    pointer-events: none;
+  }
+
+  .correct-particle-up {
+    animation: correct-particle-up 0.5s ease-out forwards;
+    pointer-events: none;
+  }
+
+  /* Score bounce in HUD */
+  .score-bounce {
+    animation: score-bounce 0.45s ease-out;
+  }
+
+  @keyframes score-bounce {
+    0%, 100% { transform: scale(1); }
+    35% { transform: scale(1.25); }
+    55% { transform: scale(0.95); }
+    75% { transform: scale(1.08); }
+  }
+
+  /* Satz-Splitter: correct slot green glow pulse */
+  @keyframes slot-glow-pulse {
+    0%, 100% { box-shadow: none; }
+    40% { box-shadow: 0 0 20px 6px hsl(var(--success-glow) / 0.8); }
+    70% { box-shadow: 0 0 12px 3px hsl(var(--success-glow) / 0.5); }
+  }
+
+  .slot-glow-pulse {
+    animation: slot-glow-pulse 0.5s ease-out;
+  }
+
   /* Hub: Story card width + Play button (grandma-proofing) */
   .story-card-container {
     max-width: min(60vw, 640px);
@@ -297,6 +360,18 @@
 
   .high-contrast-play {
     box-shadow: 0 0 0 2px hsl(var(--primary) / 0.3);
+    transition: box-shadow 0.2s ease, filter 0.2s ease;
+  }
+
+  /* Play button glows only when hovered directly (not when card is hovered) */
+  .play-btn-article:hover {
+    box-shadow: 0 0 24px hsl(var(--der-color) / 0.5), 0 0 0 2px hsl(var(--der-color) / 0.55);
+    filter: brightness(1.15);
+  }
+
+  .play-btn-satz:hover {
+    box-shadow: 0 0 24px hsl(var(--primary) / 0.55), 0 0 0 2px hsl(var(--primary) / 0.55);
+    filter: brightness(1.15);
   }
 
   @media (max-width: 640px) {

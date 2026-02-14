@@ -5,9 +5,10 @@ interface SentenceSlotsProps {
   sentence: Sentence;
   placedWords: (SentenceWord | null)[];
   onDropWord: (word: SentenceWord, slotIndex: number) => void;
+  correctSlotIndex?: number | null;
 }
 
-export const SentenceSlots = ({ sentence, placedWords, onDropWord }: SentenceSlotsProps) => {
+export const SentenceSlots = ({ sentence, placedWords, onDropWord, correctSlotIndex = null }: SentenceSlotsProps) => {
   return (
     <motion.div
       initial={{ opacity: 0, y: -20 }}
@@ -16,6 +17,7 @@ export const SentenceSlots = ({ sentence, placedWords, onDropWord }: SentenceSlo
     >
       {sentence.words.map((word, index) => {
         const isPlaced = placedWords[index] !== null;
+        const isCorrectPulse = correctSlotIndex === index;
         
         return (
           <motion.div
@@ -38,6 +40,7 @@ export const SentenceSlots = ({ sentence, placedWords, onDropWord }: SentenceSlo
                 ? 'bg-success/10 border-success text-foreground' 
                 : 'bg-secondary/30 border-border text-muted-foreground/50'
               }
+              ${isCorrectPulse ? 'slot-glow-pulse' : ''}
             `}
           >
             {isPlaced ? (

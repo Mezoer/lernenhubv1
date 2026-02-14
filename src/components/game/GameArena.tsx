@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
+import { flushSync } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { v4 as uuidv4 } from 'uuid';
 import { Level, Artikel, Word, getRandomWord, LEVEL_INFO } from '@/data/wordDatabase';
@@ -7,6 +8,8 @@ import { ArticleZone } from './ArticleZone';
 import { GameStats } from './GameStats';
 import { GameOver } from './GameOver';
 import { WrongAnswerExplosion } from './WrongAnswerExplosion';
+import { CorrectAnswerCelebration } from './CorrectAnswerCelebration';
+import { useSound } from '@/hooks/useSound';
 
 interface GameArenaProps {
   level: Level;
@@ -25,6 +28,12 @@ interface ExplodingWord {
   centerY: number;
 }
 
+interface CelebratingWord {
+  word: string;
+  centerX: number;
+  centerY: number;
+}
+
 interface GameState {
   currentWord: Word | null;
   wordKey: string;
@@ -39,6 +48,7 @@ interface GameState {
   showScreenFlash: 'correct' | 'incorrect' | null;
   failedWords: FailedWord[];
   explodingWord: ExplodingWord | null;
+  celebratingWord: CelebratingWord | null;
   screenShake: boolean;
 }
 
@@ -48,7 +58,8 @@ export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const zonesRef = useRef<Map<Artikel, DOMRect>>(new Map());
   const [containerHeight, setContainerHeight] = useState(600);
-  
+  const { playDing, playWrong } = useSound();
+
   const [highScore, setHighScore] = useState(() => {
     const saved = localStorage.getItem(`artikeldrop-highscore-${level}`);
     return saved ? parseInt(saved, 10) : 0;
@@ -68,6 +79,7 @@ export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
     showScreenFlash: null,
     failedWords: [],
     explodingWord: null,
+    celebratingWord: null,
     screenShake: false,
   }));
 
@@ -118,60 +130,74 @@ export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
     }));
   }, [level]);
 
-  // Handle correct answer
-  const handleCorrect = useCallback((artikel: Artikel) => {
-    setGameState((prev) => {
-      const newScore = prev.score + 10 * (prev.streak + 1);
-      const newStreak = prev.streak + 1;
-      
-      // Save high score
-      if (newScore > highScore) {
-        localStorage.setItem(`artikeldrop-highscore-${level}`, newScore.toString());
-        setHighScore(newScore);
-      }
+  // Handle correct answer (dropPosition for confetti burst). flushSync so feedback is instant (no lag).
+  const handleCorrect = useCallback((
+    artikel: Artikel,
+    dropPosition?: { centerX: number; centerY: number }
+  ) => {
+    playDing();
 
-      return {
-        ...prev,
-        score: newScore,
-        streak: newStreak,
-        currentWord: null,
-        zoneResult: { zone: artikel, correct: true },
-        showScreenFlash: 'correct',
-      };
+    flushSync(() => {
+      setGameState((prev) => {
+        const newScore = prev.score + 10 * (prev.streak + 1);
+        const newStreak = prev.streak + 1;
+
+        if (newScore > highScore) {
+          localStorage.setItem(`artikeldrop-highscore-${level}`, newScore.toString());
+          setHighScore(newScore);
+        }
+
+        return {
+          ...prev,
+          score: newScore,
+          streak: newStreak,
+          currentWord: null,
+          zoneResult: { zone: artikel, correct: true },
+          showScreenFlash: 'correct',
+          celebratingWord: dropPosition
+            ? { word: prev.currentWord?.word ?? '', centerX: dropPosition.centerX, centerY: dropPosition.centerY }
+            : null,
+        };
+      });
     });
 
-    // Clear flash effect
+    setTimeout(() => setGameState((prev) => ({ ...prev, showScreenFlash: null })), 300);
     setTimeout(() => {
-      setGameState((prev) => ({ ...prev, showScreenFlash: null }));
-    }, 300);
+      setGameState((prev) => ({
+        ...prev,
+        celebratingWord: null,
+        currentWord: getRandomWord(level),
+        wordKey: uuidv4(),
+        zoneResult: null,
+      }));
+    }, 550);
+  }, [highScore, level, playDing]);
 
-    // Spawn new word after animation
-    setTimeout(spawnNewWord, 500);
-  }, [highScore, level, spawnNewWord]);
-
-  // Handle incorrect answer (dropPosition only when dropped in wrong bucket)
+  // Handle incorrect answer (dropPosition only when dropped in wrong bucket). flushSync so feedback is instant.
   const handleIncorrect = useCallback((
     artikel: Artikel,
     wordSnapshot: Word,
     dropPosition?: { centerX: number; centerY: number }
   ) => {
-    setGameState((prev) => {
-      const newLives = prev.lives - 1;
-      const newFailedWords = [...prev.failedWords, { word: wordSnapshot, selectedArtikel: artikel }];
-      return {
-        ...prev,
-        lives: newLives,
-        streak: 0,
-        currentWord: null,
-        zoneResult: { zone: artikel, correct: false },
-        showScreenFlash: 'incorrect',
-        isGameOver: newLives <= 0,
-        failedWords: newFailedWords,
-        explodingWord: dropPosition
-          ? { word: wordSnapshot, wrongArtikel: artikel, centerX: dropPosition.centerX, centerY: dropPosition.centerY }
-          : null,
-        screenShake: !!dropPosition,
-      };
+    flushSync(() => {
+      setGameState((prev) => {
+        const newLives = prev.lives - 1;
+        const newFailedWords = [...prev.failedWords, { word: wordSnapshot, selectedArtikel: artikel }];
+        return {
+          ...prev,
+          lives: newLives,
+          streak: 0,
+          currentWord: null,
+          zoneResult: { zone: artikel, correct: false },
+          showScreenFlash: 'incorrect',
+          isGameOver: newLives <= 0,
+          failedWords: newFailedWords,
+          explodingWord: dropPosition
+            ? { word: wordSnapshot, wrongArtikel: artikel, centerX: dropPosition.centerX, centerY: dropPosition.centerY }
+            : null,
+          screenShake: !!dropPosition,
+        };
+      });
     });
 
     // Clear splash overlay after 0.3s
@@ -271,21 +297,24 @@ export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
 
     if (droppedInZone) {
       const isCorrect = droppedInZone === wordSnapshot.artikel;
+      const wordEl = document.querySelector('.word-card')?.parentElement as HTMLElement | null;
+      const containerEl = containerRef.current;
+      const dropPos =
+        wordEl && containerEl
+          ? (() => {
+              const wr = wordEl.getBoundingClientRect();
+              const cr = containerEl.getBoundingClientRect();
+              return {
+                centerX: wr.left - cr.left + wr.width / 2,
+                centerY: wr.top - cr.top + wr.height / 2,
+              };
+            })()
+          : undefined;
       if (isCorrect) {
-        handleCorrect(droppedInZone);
+        handleCorrect(droppedInZone, dropPos);
       } else {
-        const wordEl = document.querySelector('.word-card')?.parentElement as HTMLElement | null;
-        const containerEl = containerRef.current;
-        if (wordEl && containerEl) {
-          const wr = wordEl.getBoundingClientRect();
-          const cr = containerEl.getBoundingClientRect();
-          handleIncorrect(droppedInZone, wordSnapshot, {
-            centerX: wr.left - cr.left + wr.width / 2,
-            centerY: wr.top - cr.top + wr.height / 2,
-          });
-        } else {
-          handleIncorrect(droppedInZone, wordSnapshot);
-        }
+        handleIncorrect(droppedInZone, wordSnapshot, dropPos);
+        playWrong();
       }
     } else {
       // Check if word is physically overlapping a zone even if pointer isn't
@@ -317,27 +346,30 @@ export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
 
       if (overlapZone) {
         const isCorrect = overlapZone === wordSnapshot.artikel;
+        const wordEl = document.querySelector('.word-card')?.parentElement as HTMLElement | null;
+        const containerEl = containerRef.current;
+        const overlapPos =
+          wordEl && containerEl
+            ? (() => {
+                const wr = wordEl.getBoundingClientRect();
+                const cr = containerEl.getBoundingClientRect();
+                return {
+                  centerX: wr.left - cr.left + wr.width / 2,
+                  centerY: wr.top - cr.top + wr.height / 2,
+                };
+              })()
+            : undefined;
         if (isCorrect) {
-          handleCorrect(overlapZone);
+          handleCorrect(overlapZone, overlapPos);
         } else {
-          const wordEl = document.querySelector('.word-card')?.parentElement as HTMLElement | null;
-          const containerEl = containerRef.current;
-          if (wordEl && containerEl) {
-            const wr = wordEl.getBoundingClientRect();
-            const cr = containerEl.getBoundingClientRect();
-            handleIncorrect(overlapZone, wordSnapshot, {
-              centerX: wr.left - cr.left + wr.width / 2,
-              centerY: wr.top - cr.top + wr.height / 2,
-            });
-          } else {
-            handleIncorrect(overlapZone, wordSnapshot);
-          }
+          handleIncorrect(overlapZone, wordSnapshot, overlapPos);
+          playWrong();
         }
       } else {
         setGameState((prev) => ({ ...prev, isDragging: false }));
       }
     }
-  }, [handleCorrect, handleIncorrect]);
+  }, [handleCorrect, handleIncorrect, playWrong]);
 
   // Restart game
   const handleRestart = useCallback(() => {
@@ -355,6 +387,7 @@ export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
       showScreenFlash: null,
       failedWords: [],
       explodingWord: null,
+      celebratingWord: null,
       screenShake: false,
     });
   }, [level]);
@@ -443,6 +476,15 @@ export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
             word={gameState.explodingWord.word}
             centerX={gameState.explodingWord.centerX}
             centerY={gameState.explodingWord.centerY}
+          />
+        )}
+
+        {/* Correct-answer celebration (golden/white sparkles upward) */}
+        {gameState.celebratingWord && gameState.celebratingWord.word && (
+          <CorrectAnswerCelebration
+            word={gameState.celebratingWord.word}
+            centerX={gameState.celebratingWord.centerX}
+            centerY={gameState.celebratingWord.centerY}
           />
         )}
 

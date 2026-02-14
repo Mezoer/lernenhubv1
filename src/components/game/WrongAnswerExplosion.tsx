@@ -1,17 +1,19 @@
-import { useEffect, useMemo } from 'react';
-import { Word } from '@/data/wordDatabase';
+import { useMemo } from 'react';
 
 const PARTICLE_COUNT = 6;
 const ERROR_RED = 'hsl(0 85% 55%)';
 
 interface WrongAnswerExplosionProps {
-  word: Word;
+  /** Word text to display (Word from wordDatabase or SentenceWord.word from Satz-Splitter). */
+  word: { word: string };
   centerX: number;
   centerY: number;
+  /** When true (e.g. Satz-Splitter), no red glow on the word. */
+  noWordGlow?: boolean;
 }
 
 /** Purely visual: word scale/fade + 5–6 particle circles flying out. No collision logic. */
-export const WrongAnswerExplosion = ({ word, centerX, centerY }: WrongAnswerExplosionProps) => {
+export const WrongAnswerExplosion = ({ word, centerX, centerY, noWordGlow = false }: WrongAnswerExplosionProps) => {
   const particles = useMemo(() => {
     return Array.from({ length: PARTICLE_COUNT }, (_, i) => {
       const angle = (i / PARTICLE_COUNT) * Math.PI * 2 + Math.random() * 0.5;
@@ -22,10 +24,6 @@ export const WrongAnswerExplosion = ({ word, centerX, centerY }: WrongAnswerExpl
       const delay = 0.15 + i * 0.03 + Math.random() * 0.02;
       return { px, py, size, delay };
     });
-  }, []);
-
-  useEffect(() => {
-    // Component is keyed so useMemo/particles are stable per explosion
   }, []);
 
   return (
@@ -44,7 +42,7 @@ export const WrongAnswerExplosion = ({ word, centerX, centerY }: WrongAnswerExpl
           left: 0,
           top: 0,
           transform: 'translate(-50%, -50%)',
-          textShadow: '0 0 12px hsl(0 85% 55% / 0.8)',
+          ...(noWordGlow ? {} : { textShadow: '0 0 12px hsl(0 85% 55% / 0.8)' }),
         }}
       >
         {word.word}
