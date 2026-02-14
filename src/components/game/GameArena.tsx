@@ -29,6 +29,7 @@ interface ExplodingWord {
 
 interface CelebratingWord {
   word: string;
+  artikel: Artikel;
   centerX: number;
   centerY: number;
 }
@@ -153,7 +154,12 @@ export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
         zoneResult: { zone: artikel, correct: true },
         showScreenFlash: 'correct',
         celebratingWord: dropPosition
-          ? { word: prev.currentWord?.word ?? '', centerX: dropPosition.centerX, centerY: dropPosition.centerY }
+          ? { 
+              word: prev.currentWord?.word ?? '', 
+              artikel: prev.currentWord?.artikel ?? 'der',
+              centerX: dropPosition.centerX, 
+              centerY: dropPosition.centerY 
+            }
           : null,
       };
     });
@@ -361,6 +367,7 @@ export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
           playWrong();
         }
       } else {
+        // Registration Logic: Reset dragging state and let it continue falling
         setGameState((prev) => ({ ...prev, isDragging: false }));
       }
     }
@@ -474,10 +481,11 @@ export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
           />
         )}
 
-        {/* Correct-answer celebration (golden/white sparkles upward) */}
+        {/* Correct-answer celebration (gender-matched sparkles upward) */}
         {gameState.celebratingWord && gameState.celebratingWord.word && (
           <CorrectAnswerCelebration
             word={gameState.celebratingWord.word}
+            artikel={gameState.celebratingWord.artikel}
             centerX={gameState.celebratingWord.centerX}
             centerY={gameState.celebratingWord.centerY}
           />

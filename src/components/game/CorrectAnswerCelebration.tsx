@@ -1,27 +1,33 @@
 import { useMemo } from 'react';
+import { Artikel } from '@/data/wordDatabase';
 
-const PARTICLE_COUNT = 6;
-const GOLD = 'hsl(45 90% 60%)';
-const WHITE = 'hsl(45 20% 98%)';
+const PARTICLE_COUNT = 8;
+
+const articleColors: Record<Artikel, string> = {
+  der: 'hsl(var(--der-glow))',
+  die: 'hsl(var(--die-glow))',
+  das: 'hsl(var(--das-glow))',
+};
 
 interface CorrectAnswerCelebrationProps {
   word: string;
+  artikel: Artikel;
   centerX: number;
   centerY: number;
 }
 
-/** Purely visual: word scale/fade + golden/white sparkles floating upward. */
-export const CorrectAnswerCelebration = ({ word, centerX, centerY }: CorrectAnswerCelebrationProps) => {
+/** Purely visual: word scale/fade + gender-matched sparkles floating upward. */
+export const CorrectAnswerCelebration = ({ word, artikel, centerX, centerY }: CorrectAnswerCelebrationProps) => {
   const particles = useMemo(() => {
+    const baseColor = articleColors[artikel];
     return Array.from({ length: PARTICLE_COUNT }, (_, i) => {
-      const cx = (Math.random() - 0.5) * 40;
-      const cy = -50 - Math.random() * 50;
-      const size = 4 + Math.random() * 6;
-      const delay = i * 0.04 + Math.random() * 0.03;
-      const color = Math.random() > 0.5 ? GOLD : WHITE;
-      return { cx, cy, size, delay, color };
+      const cx = (Math.random() - 0.5) * 60;
+      const cy = -60 - Math.random() * 60;
+      const size = 5 + Math.random() * 8;
+      const delay = i * 0.03 + Math.random() * 0.02;
+      return { cx, cy, size, delay, color: baseColor };
     });
-  }, []);
+  }, [artikel]);
 
   return (
     <div
@@ -33,12 +39,13 @@ export const CorrectAnswerCelebration = ({ word, centerX, centerY }: CorrectAnsw
       }}
     >
       <div
-        className="correct-word-fade absolute font-['JetBrains_Mono'] text-2xl md:text-3xl font-bold whitespace-nowrap text-primary"
+        className="correct-word-fade absolute font-['JetBrains_Mono'] text-2xl md:text-3xl font-bold whitespace-nowrap"
         style={{
           left: 0,
           top: 0,
           transform: 'translate(-50%, -50%)',
-          textShadow: '0 0 16px hsl(var(--primary) / 0.8)',
+          color: articleColors[artikel],
+          textShadow: `0 0 20px ${articleColors[artikel]}`,
         }}
       >
         {word}
@@ -56,7 +63,7 @@ export const CorrectAnswerCelebration = ({ word, centerX, centerY }: CorrectAnsw
             width: p.size,
             height: p.size,
             backgroundColor: p.color,
-            boxShadow: `0 0 8px ${p.color}`,
+            boxShadow: `0 0 10px ${p.color}`,
             animationDelay: `${p.delay}s`,
           } as React.CSSProperties}
         />

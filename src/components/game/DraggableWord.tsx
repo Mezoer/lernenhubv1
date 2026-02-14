@@ -138,10 +138,10 @@ export const DraggableWord = ({
       onDragEnd({ x: e.clientX, y: e.clientY }, word);
     };
 
-    el.addEventListener('pointerdown', onDown);
-    window.addEventListener('pointermove', onMove);
-    window.addEventListener('pointerup', onUp);
-    window.addEventListener('pointercancel', onUp);
+    el.addEventListener('pointerdown', onDown, { passive: false });
+    window.addEventListener('pointermove', onMove, { passive: true });
+    window.addEventListener('pointerup', onUp, { passive: true });
+    window.addEventListener('pointercancel', onUp, { passive: true });
 
     return () => {
       el.removeEventListener('pointerdown', onDown);
