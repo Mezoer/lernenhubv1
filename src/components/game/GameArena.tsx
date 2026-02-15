@@ -183,6 +183,8 @@ export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
     dropPosition?: { centerX: number; centerY: number }
   ) => {
     setGameState((prev) => {
+      if (!prev.currentWord) return prev;
+
       const newLives = prev.lives - 1;
       const newFailedWords = [...prev.failedWords, { word: wordSnapshot, selectedArtikel: artikel }];
       return {

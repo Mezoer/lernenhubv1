@@ -4,9 +4,9 @@ import { Artikel } from '@/data/wordDatabase';
 const PARTICLE_COUNT = 8;
 
 const articleColors: Record<Artikel, string> = {
-  der: 'hsl(var(--der-glow))',
-  die: 'hsl(var(--die-glow))',
-  das: 'hsl(var(--das-glow))',
+  der: 'hsl(210, 90%, 65%)',
+  die: 'hsl(340, 85%, 70%)',
+  das: 'hsl(145, 70%, 55%)',
 };
 
 interface CorrectAnswerCelebrationProps {

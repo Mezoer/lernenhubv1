@@ -129,7 +129,7 @@ export const GameHub = ({
             <p className="text-xs leading-relaxed mb-3" style={{ color: '#8a969e' }}>
               Donating helps me cover domain hosting costs and ensures the game stays free of ads and in-game purchases.
             </p>
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row gap-3">
               <a href="https://ko-fi.com/mezohehe" target="_blank" rel="noopener noreferrer" className="flex-1">
                 <motion.button
                   whileHover={{ scale: 1.05 }}

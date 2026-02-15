@@ -362,15 +362,15 @@
     transition: box-shadow 0.2s ease, filter 0.2s ease;
   }
 
-  .group:hover .play-btn-glow {
+  .play-btn-glow:hover {
     filter: brightness(1.15);
   }
 
-  .group:hover .play-btn-article.play-btn-glow {
+  .play-btn-article.play-btn-glow:hover {
     box-shadow: 0 0 24px hsl(var(--der-color) / 0.45), 0 0 0 2px hsl(var(--der-color) / 0.5);
   }
 
-  .group:hover .play-btn-satz.play-btn-glow {
+  .play-btn-satz.play-btn-glow:hover {
     box-shadow: 0 0 24px hsl(var(--primary) / 0.5), 0 0 0 2px hsl(var(--primary) / 0.5);
   }
 
