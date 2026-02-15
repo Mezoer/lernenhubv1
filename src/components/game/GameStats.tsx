@@ -1,7 +1,6 @@
-import { motion, AnimatePresence } from 'framer-motion';
-import { Trophy, Heart, Target, ArrowLeft, Pause, Play } from 'lucide-react';
-import { Level } from '@/data/wordDatabase';
-import { useEffect, useRef } from 'react';
+import { motion } from 'framer-motion';
+import { Heart, Trophy, Flame, Pause, Play, ArrowLeft } from 'lucide-react';
+import { Level, LEVEL_INFO } from '@/data/wordDatabase';
 
 interface GameStatsProps {
   level: Level;
@@ -13,197 +12,107 @@ interface GameStatsProps {
   onTogglePause: () => void;
 }
 
-export const GameStats = ({ level, score, lives, streak, isPaused, onBack, onTogglePause }: GameStatsProps) => {
-  const prevLives = useRef(lives);
-  const justLostLife = prevLives.current > lives;
-
-  useEffect(() => {
-    prevLives.current = lives;
-  }, [lives]);
+export const GameStats = ({
+  level,
+  score,
+  lives,
+  streak,
+  isPaused,
+  onBack,
+  onTogglePause,
+}: GameStatsProps) => {
+  const levelInfo = LEVEL_INFO[level];
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: -20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="select-none"
-    >
-      {/* Desktop layout - unchanged */}
-      <div className="hidden md:flex items-center justify-between p-4 bg-card/50 backdrop-blur-sm border-b border-border">
-        <div className="flex items-center gap-3">
+    <div className="w-full bg-background/40 backdrop-blur-md border-b border-white/10 px-3 py-2 sm:px-6 sm:py-3 z-30">
+      <div className="max-w-5xl mx-auto flex items-center justify-between gap-2 sm:gap-4">
+        {/* Left: Back & Level */}
+        <div className="flex items-center gap-2 sm:gap-3">
           <button
             onClick={onBack}
-            className="p-2 rounded-lg hover:bg-secondary transition-colors"
+            className="p-2 rounded-xl hover:bg-white/10 transition-colors text-muted-foreground hover:text-foreground active:scale-90"
             aria-label="Back to menu"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <div className="stat-badge">
-            <span className="text-sm text-muted-foreground">Level:</span>{' '}
-            <span className="font-bold text-primary">{level}</span>
+          <div className="flex flex-col">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60 leading-none mb-1">Level</span>
+            <span className={`text-sm font-black bg-gradient-to-r ${levelInfo.color} bg-clip-text text-transparent leading-none`}>
+              {levelInfo.name}
+            </span>
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
-          <motion.div
-            key={score}
-            className="stat-badge flex items-center gap-2 score-bounce"
-          >
-            <Trophy className="w-4 h-4 text-primary" />
-            <span className="font-bold">{score}</span>
-          </motion.div>
-
-          <AnimatePresence>
-            {streak > 1 && (
-              <motion.div
-                initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0, opacity: 0 }}
-                className="stat-badge flex items-center gap-2 bg-primary/20"
-              >
-                <Target className="w-4 h-4 text-primary" />
-                <span className="font-bold text-primary">{streak}x</span>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          <button
-            onClick={onTogglePause}
-            className="p-2 rounded-lg hover:bg-secondary transition-colors"
-            aria-label={isPaused ? 'Resume' : 'Pause'}
-          >
-            {isPaused ? <Play className="w-5 h-5" /> : <Pause className="w-5 h-5" />}
-          </button>
-
-          <div className="flex items-center gap-1">
-            {[...Array(3)].map((_, i) => {
-              const isActive = i < lives;
-              const isBreaking = justLostLife && i === lives;
-              return (
-                <motion.div
-                  key={i}
-                  initial={false}
-                  animate={
-                    isBreaking
-                      ? { scale: [1, 1.4, 0], rotate: [0, -15, 15, 0], opacity: [1, 1, 0] }
-                      : { scale: isActive ? 1 : 0.7, opacity: isActive ? 1 : 0.2 }
-                  }
-                  transition={
-                    isBreaking
-                      ? { duration: 0.4, ease: 'easeOut' }
-                      : { type: 'spring', stiffness: 500, damping: 25 }
-                  }
-                >
-                  <Heart
-                    className={`w-6 h-6 transition-colors ${
-                      isActive
-                        ? 'text-destructive fill-destructive drop-shadow-[0_0_8px_hsl(var(--destructive)/0.6)]'
-                        : 'text-muted-foreground/40'
-                    }`}
-                  />
-                </motion.div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* Mobile consolidated HUD */}
-      <div className="md:hidden px-3 pt-3 pb-2 bg-card/50 backdrop-blur-sm border-b border-border">
-        <div className="flex items-center justify-between rounded-xl bg-secondary/60 border border-border/50 px-3 py-2">
-          {/* Back */}
-          <button
-            onClick={onBack}
-            className="p-1.5 rounded-lg hover:bg-secondary transition-colors shrink-0"
-            aria-label="Back to menu"
-          >
-            <ArrowLeft className="w-4 h-4 text-foreground" />
-          </button>
-
-          {/* Lives */}
-          <div className="flex items-center gap-0.5 shrink-0">
-            {[...Array(3)].map((_, i) => {
-              const isActive = i < lives;
-              const isBreaking = justLostLife && i === lives;
-              return (
-                <motion.div
-                  key={i}
-                  initial={false}
-                  animate={
-                    isBreaking
-                      ? { scale: [1, 1.4, 0], rotate: [0, -15, 15, 0], opacity: [1, 1, 0] }
-                      : { scale: isActive ? 1 : 0.7, opacity: isActive ? 1 : 0.2 }
-                  }
-                  transition={
-                    isBreaking
-                      ? { duration: 0.4, ease: 'easeOut' }
-                      : { type: 'spring', stiffness: 500, damping: 25 }
-                  }
-                >
-                  <Heart
-                    className={`w-5 h-5 transition-colors ${
-                      isActive
-                        ? 'text-destructive fill-destructive drop-shadow-[0_0_6px_hsl(var(--destructive)/0.6)]'
-                        : 'text-muted-foreground/40'
-                    }`}
-                  />
-                </motion.div>
-              );
-            })}
-          </div>
-
-          <div className="w-px h-5 bg-border/50" />
-
-          {/* Streak - always reserves space */}
-          <div className="flex items-center gap-1 min-w-[40px] justify-center shrink-0">
-            <AnimatePresence mode="wait">
-              {streak > 1 ? (
-                <motion.div
-                  key="streak-active"
-                  initial={{ scale: 0, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0, opacity: 0 }}
-                  className="flex items-center gap-1"
-                >
-                  <Target className="w-4 h-4 text-primary" />
-                  <span className="font-bold text-primary text-sm">{streak}x</span>
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="streak-empty"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 0.4 }}
-                  className="flex items-center gap-1"
-                >
-                  <Target className="w-4 h-4 text-muted-foreground" />
-                  <span className="font-medium text-muted-foreground text-sm">--</span>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-
-          <div className="w-px h-5 bg-border/50" />
-
+        {/* Center: Stats Group */}
+        <div className="flex items-center bg-white/5 rounded-2xl border border-white/10 px-3 py-1.5 sm:px-6 sm:py-2 gap-4 sm:gap-8">
           {/* Score */}
-          <motion.div
-            key={score}
-            className="flex items-center gap-1.5 shrink-0 score-bounce"
-          >
-            <Trophy className="w-4 h-4 text-primary" />
-            <span className="font-bold text-foreground text-sm">{score}</span>
-          </motion.div>
+          <div className="flex flex-col items-center min-w-[45px] sm:min-w-[60px]">
+            <div className="flex items-center gap-1 text-muted-foreground/60 mb-0.5">
+              <Trophy className="w-3 h-3" />
+              <span className="text-[9px] font-bold uppercase tracking-tighter">Score</span>
+            </div>
+            <motion.div 
+              key={score}
+              initial={{ scale: 1.2, color: 'hsl(var(--primary))' }}
+              animate={{ scale: 1, color: 'white' }}
+              className="text-base sm:text-xl font-black font-['JetBrains_Mono'] tabular-nums leading-none"
+            >
+              {score}
+            </motion.div>
+          </div>
 
-          <div className="w-px h-5 bg-border/50" />
+          <div className="w-px h-8 bg-white/10" />
 
-          {/* Pause */}
-          <button
-            onClick={onTogglePause}
-            className="p-1.5 rounded-lg hover:bg-secondary transition-colors shrink-0"
-            aria-label={isPaused ? 'Resume' : 'Pause'}
-          >
-            {isPaused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
-          </button>
+          {/* Streak - Always visible, dims when 0 */}
+          <div className={`flex flex-col items-center min-w-[45px] sm:min-w-[60px] transition-opacity duration-300 ${streak > 0 ? 'opacity-100' : 'opacity-20'}`}>
+            <div className="flex items-center gap-1 text-orange-500 mb-0.5">
+              <Flame className="w-3 h-3 fill-current" />
+              <span className="text-[9px] font-bold uppercase tracking-tighter">Streak</span>
+            </div>
+            <motion.div 
+              key={streak}
+              initial={streak > 0 ? { scale: 1.3 } : {}}
+              animate={{ scale: 1 }}
+              className="text-base sm:text-xl font-black font-['JetBrains_Mono'] text-orange-500 tabular-nums leading-none"
+            >
+              {streak}x
+            </motion.div>
+          </div>
+
+          <div className="w-px h-8 bg-white/10" />
+
+          {/* Lives - Always visible */}
+          <div className="flex flex-col items-center">
+            <div className="flex items-center gap-1 text-red-500 mb-0.5">
+              <Heart className="w-3 h-3 fill-current" />
+              <span className="text-[9px] font-bold uppercase tracking-tighter">Lives</span>
+            </div>
+            <div className="flex gap-1 sm:gap-1.5">
+              {[...Array(3)].map((_, i) => (
+                <motion.div
+                  key={i}
+                  animate={i < lives ? { scale: 1, opacity: 1 } : { scale: 0.8, opacity: 0.2 }}
+                  className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full ${
+                    i < lives ? 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]' : 'bg-white'
+                  }`}
+                />
+              ))}
+            </div>
+          </div>
         </div>
+
+        {/* Right: Pause */}
+        <button
+          onClick={onTogglePause}
+          className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 transition-all active:scale-90 border border-white/10"
+        >
+          {isPaused ? (
+            <Play className="w-5 h-5 text-emerald-500 fill-current" />
+          ) : (
+            <Pause className="w-5 h-5 text-foreground fill-current" />
+          )}
+        </button>
       </div>
-    </motion.div>
+    </div>
   );
 };
