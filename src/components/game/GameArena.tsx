@@ -52,7 +52,7 @@ interface GameState {
   screenShake: boolean;
 }
 
-const ARTICLES: Artikel[] = ['der', 'das', 'die'] as const; // das in middle as neutral
+const ARTICLES: Artikel[] = ['der', 'das', 'die'] as const;
 
 export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -85,7 +85,6 @@ export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
 
   const fallSpeed = LEVEL_INFO[level].speed;
 
-  // Update container height on mount and resize
   useEffect(() => {
     const updateHeight = () => {
       if (containerRef.current) {
@@ -97,7 +96,6 @@ export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
     return () => window.removeEventListener('resize', updateHeight);
   }, []);
 
-  // Update zone positions
   const updateZonePositions = useCallback(() => {
     ARTICLES.forEach((artikel) => {
       const element = document.getElementById(`zone-${artikel}`);
@@ -113,24 +111,10 @@ export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
     return () => window.removeEventListener('resize', updateZonePositions);
   }, [updateZonePositions]);
 
-  // Toggle pause
   const handleTogglePause = useCallback(() => {
     setGameState((prev) => ({ ...prev, isPaused: !prev.isPaused }));
   }, []);
 
-  // Spawn new word with fresh key (fixes teleport bug)
-  const spawnNewWord = useCallback(() => {
-    setGameState((prev) => ({
-      ...prev,
-      currentWord: getRandomWord(level),
-      wordKey: uuidv4(), // New key forces complete remount
-      isDragging: false,
-      activeZone: null,
-      zoneResult: null,
-    }));
-  }, [level]);
-
-  // Handle correct answer (dropPosition for confetti burst)
   const handleCorrect = useCallback((
     artikel: Artikel,
     dropPosition?: { centerX: number; centerY: number }
@@ -176,7 +160,6 @@ export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
     }, 550);
   }, [highScore, level, playDing]);
 
-  // Handle incorrect answer (dropPosition only when dropped in wrong bucket)
   const handleIncorrect = useCallback((
     artikel: Artikel,
     wordSnapshot: Word,
@@ -203,17 +186,14 @@ export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
       };
     });
 
-    // Clear splash overlay after 0.3s
     setTimeout(() => {
       setGameState((prev) => ({ ...prev, showScreenFlash: null }));
     }, 300);
 
-    // Clear screen shake after 200ms
     setTimeout(() => {
       setGameState((prev) => ({ ...prev, screenShake: false }));
     }, 200);
 
-    // Clear explosion and spawn next word after shatter animation
     setTimeout(() => {
       setGameState((prev) => {
         if (!prev.isGameOver) {
@@ -230,7 +210,6 @@ export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
     }, 650);
   }, [level]);
 
-  // Handle floor hit (word missed)
   const handleHitFloor = useCallback(() => {
     if (gameState.isDragging || gameState.isPaused) return;
     
@@ -251,7 +230,6 @@ export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
       };
     });
 
-    // Clear flash effect
     setTimeout(() => {
       setGameState((prev) => ({ ...prev, showScreenFlash: null }));
     }, 400);
@@ -270,7 +248,6 @@ export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
     }, 400);
   }, [gameState.isDragging, gameState.isPaused, level]);
 
-  // Drag handlers
   const handleDragStart = useCallback(() => {
     updateZonePositions();
     setGameState((prev) => ({ ...prev, isDragging: true }));
@@ -280,7 +257,6 @@ export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
     const pointerX = pointerPos.x;
     const pointerY = pointerPos.y;
 
-    // Check which zone the pointer is over
     let droppedInZone: Artikel | null = null;
     
     ARTICLES.forEach((artikel) => {
@@ -320,10 +296,8 @@ export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
         playWrong();
       }
     } else {
-      // Check if word is physically overlapping a zone even if pointer isn't
-      // This helps with "missed" glitches on fast movements
       let overlapZone: Artikel | null = null;
-      const wordElement = document.querySelector(`[key="${wordKey}"]`) || document.querySelector('.word-card')?.parentElement;
+      const wordElement = document.querySelector(`[key="${gameState.wordKey}"]`) || document.querySelector('.word-card')?.parentElement;
       
       if (wordElement) {
         const wordRect = wordElement.getBoundingClientRect();
@@ -334,7 +308,6 @@ export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
           const zoneElement = document.getElementById(`zone-${artikel}`);
           if (zoneElement) {
             const rect = zoneElement.getBoundingClientRect();
-            // Larger detection area for the word itself
             if (
               wordCenterX >= rect.left - 20 &&
               wordCenterX <= rect.right + 20 &&
@@ -369,13 +342,11 @@ export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
           playWrong();
         }
       } else {
-        // Registration Logic: Reset dragging state and let it continue falling
         setGameState((prev) => ({ ...prev, isDragging: false }));
       }
     }
-  }, [handleCorrect, handleIncorrect, playWrong]);
+  }, [handleCorrect, handleIncorrect, playWrong, gameState.wordKey]);
 
-  // Restart game
   const handleRestart = useCallback(() => {
     setGameState({
       currentWord: getRandomWord(level),
@@ -400,7 +371,6 @@ export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
     <div
       className={`h-screen flex flex-col bg-[image:var(--gradient-game-bg)] relative select-none ${gameState.screenShake ? 'screen-shake-active' : ''}`}
     >
-      {/* Red radial splash overlay (center pulse, 0.3s) */}
       <AnimatePresence>
         {gameState.showScreenFlash === 'incorrect' && (
           <motion.div
@@ -429,7 +399,6 @@ export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
         )}
       </AnimatePresence>
 
-      {/* Pause Overlay */}
       <AnimatePresence>
         {gameState.isPaused && !gameState.isGameOver && (
           <motion.div
@@ -469,12 +438,10 @@ export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
         onTogglePause={handleTogglePause}
       />
 
-      {/* Game Area */}
       <div
         ref={containerRef}
         className="flex-1 relative overflow-hidden"
       >
-        {/* Wrong-answer explosion (word shatter + particles) */}
         {gameState.explodingWord && (
           <WrongAnswerExplosion
             word={gameState.explodingWord.word}
@@ -483,7 +450,6 @@ export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
           />
         )}
 
-        {/* Correct-answer celebration (gender-matched sparkles upward) */}
         {gameState.celebratingWord && gameState.celebratingWord.word && (
           <CorrectAnswerCelebration
             word={gameState.celebratingWord.word}
@@ -493,26 +459,22 @@ export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
           />
         )}
 
-        {/* Falling Word */}
-        <AnimatePresence mode="wait">
-          {gameState.currentWord && !gameState.isGameOver && (
-            <DraggableWord
-              key={gameState.wordKey}
-              word={gameState.currentWord}
-              wordKey={gameState.wordKey}
-              containerRef={containerRef}
-              fallSpeed={fallSpeed}
-              isDragging={gameState.isDragging}
-              isPaused={gameState.isPaused}
-              onDragStart={handleDragStart}
-              onDragEnd={handleDragEnd}
-              onHitFloor={handleHitFloor}
-              gameHeight={containerHeight}
-            />
-          )}
-        </AnimatePresence>
+        {gameState.currentWord && !gameState.isGameOver && (
+          <DraggableWord
+            key={gameState.wordKey}
+            word={gameState.currentWord}
+            wordKey={gameState.wordKey}
+            containerRef={containerRef}
+            fallSpeed={fallSpeed}
+            isDragging={gameState.isDragging}
+            isPaused={gameState.isPaused}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+            onHitFloor={handleHitFloor}
+            gameHeight={containerHeight}
+          />
+        )}
 
-        {/* Article Zones */}
         <div className="absolute bottom-0 left-0 right-0 p-4 md:p-6">
           <div className="flex gap-3 md:gap-4 max-w-4xl mx-auto">
             {ARTICLES.map((artikel) => (
@@ -539,7 +501,6 @@ export const GameArena = ({ level, onBackToMenu }: GameArenaProps) => {
         </div>
       </div>
 
-      {/* Game Over Overlay */}
       <AnimatePresence>
         {gameState.isGameOver && (
           <GameOver
